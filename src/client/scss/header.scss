@@ -1,0 +1,33 @@
+.header img {
+	height: 50px;
+}
+
+.header {
+	padding: 0.3em;
+	margin-bottom: 3em;
+	display: flex;
+	align-items: center;
+	height: 75px;
+}
+
+.header * {
+	margin: 1em;
+}
+
+.header .dropzone {
+	font-size: 14pt;
+	padding: 1em;
+	width: 150px;
+	text-align: center;
+}
+
+.header .dropzone.shopping-list {
+	background-color: #1b98ff;
+	color: #FFF;
+}
+
+.header .dropzone.trash {
+	margin-left: 3em;
+	background-color: #ff2e13;
+	color: #FFF;
+}

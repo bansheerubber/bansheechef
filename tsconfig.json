@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "resolveJsonModule": true,
+    "target": "es2020",
+    "module": "commonjs",
+    "outDir": "./test/",
+    "jsx": "react",
+    "esModuleInterop": true,
+  },
+  "include": [
+    "src/client/ts/**/*"
+  ],
+}

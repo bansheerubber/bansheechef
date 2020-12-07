@@ -1,0 +1,82 @@
+$settings-size: 25vw;
+
+.ingredient-settings {
+	background-color: #EEE;
+	width: $settings-size;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	padding: 2em;
+	box-sizing: border-box;
+	position: fixed;
+	top: 0;
+	right: 0;
+	height: 100%;
+}
+
+.ingredient-settings .preview {
+	width: 400px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
+.ingredient-settings .preview img {
+	width: 400px;
+}
+
+.ingredients-container {
+	display: flex;
+	padding: 0em 4em;
+	justify-content: center;
+	flex-direction: column;
+	width: 100vw - $settings-size;
+	box-sizing: border-box;
+	margin: auto;
+}
+
+.ingredients {
+	display: flex;
+	flex-wrap: wrap;
+	user-select: none;
+}
+
+.ingredients>div {
+	display: flex;
+	flex-direction: column;
+	margin: 0.5em;
+	border-radius: 10px;
+}
+
+.ingredients>div.dragging {
+	display: flex;
+	flex-direction: column;
+	margin: 0.5em;
+	border-radius: 10px;
+}
+
+.ingredients>div.dragging>div {
+	background-color: transparent !important;
+	color: transparent !important;
+	background-image: none !important;
+}
+
+.ingredients>div>div:first-child {
+	width: 200px;
+	height: 200px;
+	background-position: 50%;
+	background-size: auto 100%;
+	margin: 0;
+
+	background-color: #CCC;
+	border-top-left-radius: 10px;
+	border-top-right-radius: 10px;
+}
+
+.ingredients>div>div:last-child {
+	background-color: #E0E0E0;
+	border-bottom-left-radius: 10px;
+	border-bottom-right-radius: 10px;
+	padding: 0.5em;
+	margin: 0;
+}
