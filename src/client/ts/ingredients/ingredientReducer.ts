@@ -1,22 +1,31 @@
-import { setDraggable, setSelectedIngredient } from "./ingredientActions"
-import { IngredientData } from "./ingredientData"
+import {
+	setAddIngredientShown,
+	setDraggable,
+	setIngredients,
+	setSelectedIngredient
+} from "./ingredientActions"
+import { IngredientTypeData } from "./ingredientData"
 
 export interface IngredientState {
-	selectedIngredient: IngredientData
+	addIngredientShown: boolean
 	draggable: {
 		x: number,
 		y: number,
-		data: IngredientData
+		data: IngredientTypeData
 	}
+	ingredients: IngredientTypeData[]
+	selectedIngredient: IngredientTypeData
 }
 
 const createDefaultState = () => ({
-	selectedIngredient: null,
+	addIngredientShown: false,
 	draggable: {
 		x: 0,
 		y: 0,
 		data: null,
 	},
+	ingredients: [],
+	selectedIngredient: null,
 })
 
 const ingredients = (state: IngredientState = createDefaultState(), action): IngredientState => {
@@ -34,7 +43,21 @@ const ingredients = (state: IngredientState = createDefaultState(), action): Ing
 				draggable: {
 					...state.draggable,
 					...action.draggable,
-				}
+				},
+			}
+		}
+
+		case setIngredients: {
+			return {
+				...state,
+				ingredients: action.ingredients,
+			}
+		}
+
+		case setAddIngredientShown: {
+			return {
+				...state,
+				addIngredientShown: action.shown,
 			}
 		}
 

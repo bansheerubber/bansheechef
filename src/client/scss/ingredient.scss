@@ -59,6 +59,7 @@ $settings-size: 25vw;
 	background-color: transparent !important;
 	color: transparent !important;
 	background-image: none !important;
+	border: 0 !important;
 }
 
 .ingredients>div>div:first-child {
@@ -71,6 +72,10 @@ $settings-size: 25vw;
 	background-color: #CCC;
 	border-top-left-radius: 10px;
 	border-top-right-radius: 10px;
+	border-top: 2px solid #CCC;
+	border-left: 2px solid #CCC;
+	border-right: 2px solid #CCC;
+	box-sizing: border-box;
 }
 
 .ingredients>div>div:last-child {
@@ -79,4 +84,45 @@ $settings-size: 25vw;
 	border-bottom-right-radius: 10px;
 	padding: 0.5em;
 	margin: 0;
+	width: 200px;
+	display: inline-block;
+	word-break: break-word;
+	box-sizing: border-box;
+}
+
+.add-ingredient {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
+.add-ingredient>div:first-child {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	width: 100%;
+}
+
+.add-ingredient>div:first-child div {
+	width: 300px;
+	height: 300px;
+	background-position: 50%;
+	background-size: auto 100%;
+}
+
+.add-ingredient .inputs {
+	display: flex;
+	flex-direction: column;
+	margin-top: 0.5em;
+}
+
+.add-ingredient .inputs>* {
+	margin: 0.25em 0em;
+}
+
+.add-ingredient .added-list {
+	width: 100%;
+	height: 300px;
+	border: 1px solid #CCC;
+	border-radius: 4px;
 }

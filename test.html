@@ -2,123 +2,64 @@
 <html>
 	<head>
 		<style>
-			.ingredients {
+			.modal-blackout {
+				position: fixed;
+				top: 0;
+				left: 0;
+				z-index: 100;
+				width: 100vw;
+				height: 100vh;
+				background-color: rgba(0, 0, 0, 0.2);
+			}
+
+			.modal {
+				position: fixed;
+				z-index: 101;
+				left: 50%;
+				top: 50%;
+				transform: translate(-50%, -50%);
+				width: 50vw;
+				background-color: #EEE;
+				border-radius: 5px;
+			}
+
+			.modal .header {
 				display: flex;
-				width: 70%;
-				margin: auto;
-				flex-wrap: wrap;
-				user-select: none;
+				flex-direction: row-reverse;
+				padding: 0.5em 0.5em 0em 0.5em;
 			}
 
-			.ingredients>div {
-				display: flex;
-				flex-direction: column;
-				margin: 0.5em;
+			.modal .header>button {
+				border: 0;
+				background: 0;
+				font-size: 1.25em;
+				color: #555;
 			}
 
-			.ingredients>div>div:first-child {
-				width: 200px;
-				height: 200px;
-				background-position: 50%;
-				background-size: auto 100%;
-				margin: 0;
-
-				background-color: #CCC;
-				border-top-left-radius: 10px;
-				border-top-right-radius: 10px;
+			.modal .header>button:active {
+				outline: 0 !important;
 			}
 
-			.ingredients>div>div:last-child {
-				background-color: #E0E0E0;
-				border-bottom-left-radius: 10px;
-				border-bottom-right-radius: 10px;
-				padding: 0.5em;
-				margin: 0;
+			.modal .header>button:focus {
+				outline: 0 !important;
+			}
+
+			.modal .body {
+				padding: 0em 1em 1em 1em;
 			}
 		</style>
 	</head>
 
 	<body>
-		<div class="ingredients">
-			<div>
-				<div style="background-image: url(https://d1e3z2jco40k3v.cloudfront.net/-/media/mccormick-us/products/mccormick/c/800/chili-powder.png)"></div>
-				<div>
-					<div>Chili Powder</div>
-					<div>1 bottle, 50% full</div>
+		hey there everyone
+		<div>
+			<div class="modal">
+				<div class="header">
+					<button>&#10005;</button>
 				</div>
+				<div class="body"></div>
 			</div>
-
-			<div>
-				<div style="background-image: url(https://d1e3z2jco40k3v.cloudfront.net/-/media/mccormick-us/products/mccormick/c/800/chili-powder.png)"></div>
-				<div>
-					<div>Chili Powder</div>
-					<div>1 bottle, 50% full</div>
-				</div>
-			</div>
-
-			<div>
-				<div style="background-image: url(https://d1e3z2jco40k3v.cloudfront.net/-/media/mccormick-us/products/mccormick/c/800/chili-powder.png)"></div>
-				<div>
-					<div>Chili Powder</div>
-					<div>1 bottle, 50% full</div>
-				</div>
-			</div>
-
-			<div>
-				<div style="background-image: url(https://d1e3z2jco40k3v.cloudfront.net/-/media/mccormick-us/products/mccormick/c/800/chili-powder.png)"></div>
-				<div>
-					<div>Chili Powder</div>
-					<div>1 bottle, 50% full</div>
-				</div>
-			</div>
-
-			<div>
-				<div style="background-image: url(https://d1e3z2jco40k3v.cloudfront.net/-/media/mccormick-us/products/mccormick/c/800/chili-powder.png)"></div>
-				<div>
-					<div>Chili Powder</div>
-					<div>1 bottle, 50% full</div>
-				</div>
-			</div>
-
-			<div>
-				<div style="background-image: url(https://d1e3z2jco40k3v.cloudfront.net/-/media/mccormick-us/products/mccormick/c/800/chili-powder.png)"></div>
-				<div>
-					<div>Chili Powder</div>
-					<div>1 bottle, 50% full</div>
-				</div>
-			</div>
-
-			<div>
-				<div style="background-image: url(https://d1e3z2jco40k3v.cloudfront.net/-/media/mccormick-us/products/mccormick/c/800/chili-powder.png)"></div>
-				<div>
-					<div>Chili Powder</div>
-					<div>1 bottle, 50% full</div>
-				</div>
-			</div>
-
-			<div>
-				<div style="background-image: url(https://d1e3z2jco40k3v.cloudfront.net/-/media/mccormick-us/products/mccormick/c/800/chili-powder.png)"></div>
-				<div>
-					<div>Chili Powder</div>
-					<div>1 bottle, 50% full</div>
-				</div>
-			</div>
-
-			<div>
-				<div style="background-image: url(https://d1e3z2jco40k3v.cloudfront.net/-/media/mccormick-us/products/mccormick/c/800/chili-powder.png)"></div>
-				<div>
-					<div>Chili Powder</div>
-					<div>1 bottle, 50% full</div>
-				</div>
-			</div>
-
-			<div>
-				<div style="background-image: url(https://d1e3z2jco40k3v.cloudfront.net/-/media/mccormick-us/products/mccormick/c/800/chili-powder.png)"></div>
-				<div>
-					<div>Chili Powder</div>
-					<div>1 bottle, 50% full</div>
-				</div>
-			</div>
+			<div class="modal-blackout"></div>
 		</div>
 	</body>
 </html>

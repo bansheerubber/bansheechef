@@ -1,0 +1,35 @@
+.button {
+	font-size: 14pt;
+	padding: 0.7em;
+	text-align: center;
+	border: 0;
+	background: 0;
+	border-radius: 4px;
+	box-shadow: 0;
+}
+
+.button:focus {
+	outline: 0 !important;
+}
+
+.button:active {
+	outline: 0 !important;
+}
+
+.button.blue {
+	background-color: hsl(207, 100, 55);
+	color: #FFF;
+}
+
+.button.blue:active {
+	background-color: hsl(207, 100, 45);
+}
+
+.button.gray {
+	background-color: hsl(0, 0%, 66%);
+	color: #FFF;
+}
+
+.button.gray:active {
+	background-color: hsl(0, 0%, 56%);
+}

@@ -1,12 +1,12 @@
 import * as React from "react"
 import { connect } from "react-redux"
 import Ingredient, { IngredientProps } from "./ingredient"
-import { IngredientData } from "./ingredientData"
+import { IngredientTypeData } from "./ingredientData"
 
 interface IngredientDraggableReduxState {
 	x: number
 	y: number
-	data: IngredientData
+	data: IngredientTypeData
 }
 
 type OwnProps = IngredientDraggableReduxState

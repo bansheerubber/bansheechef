@@ -1,13 +1,17 @@
-from flask import Flask, Response, url_for, redirect, render_template, request, session, flash, jsonify
+from flask import Flask, Response, url_for, redirect, render_template, request, session, flash, jsonify, send_from_directory
 import flask
 import sqlite3
 import os
 import logging
 import json
+import re
+from random import choice
+from string import ascii_lowercase
 
 HOME = os.getenv("HOME")
 LOCAL = f"{HOME}/.config/bansheechef"
 LOCAL_STORAGE = f"{LOCAL}/storage"
+LOCAL_IMAGES = f"{LOCAL_STORAGE}/images"
 
 app = Flask(__name__)
 
@@ -33,33 +37,72 @@ def create_connection():
 	
 	return (connection, cursor)
 
+def get_random_image_name():
+	return "".join(choice(ascii_lowercase) for i in range(8))
+
 """
 	'name' and 'max_amount' required
 	'current_amount' defaults to 'max_amount' if omitted
 """
-@app.route("/add-ingredient/")
+@app.route("/add-ingredient/", methods=["POST"])
 def add_ingredient():
-	name = request.args.get("name")
-	max_amount = request.args.get("max_amount")
-	current_amount = request.args.get("current_amount")
+	name = request.values.get("name")
+	max_amount = request.values.get("maxAmount")
+	current_amount = request.values.get("currentAmount")
 
-	if name == None or max_amount == None:
-		return "{}"
+	if name == None or max_amount == None or not (type(max_amount) == int or float):
+		return "{}" # error out if name/max_amount isn't provided, or ifs max_amount is not a valid number
+	
+	name = name.strip()
 
 	if current_amount == None:
 		current_amount = max_amount
+	elif not (type(current_amount) == int or float):
+		return "{}" # error out if current_amount is not a valid number
 	
 	connection, cursor = create_connection()
 
-	image_source = request.args.get("image_source")
 	image_id = -1
-	if image_source:
-		cursor.execute("""INSERT INTO images (source) VALUES(?) RETURNING id;""", [image_source])
-		image_id = cursor.fetchone()[0]
+	database_name = ""
+	if "picture" in request.files:
+		picture = request.files["picture"]
+		image_name = f"{get_random_image_name()}.png"
+		database_name = f"local:{image_name}"
+		filename = f"{LOCAL_IMAGES}/{image_name}" # TODO this really needs to be made secure
+
+		cursor.execute("""INSERT INTO images (source) VALUES(?);""", [database_name])
+		image_id = cursor.lastrowid
+		picture.save(filename)
 	
+	# check if we already have an ingredient type
 	cursor.execute(
-		"""INSERT INTO ingredients (name, max_amount, current_amount, image_id) VALUES(?, ?, ?, ?);""",
-		[name, max_amount, current_amount, image_id]
+		"""SELECT id FROM ingredient_types WHERE name = ? AND max_amount = ?;""",
+		[name, max_amount]
+	)
+	result = cursor.fetchall()
+
+	ingredient_type_id = None
+	if len(result) != 0:
+		# use the result
+		ingredient_type_id = result[0][0]
+	else:
+		# insert the ingredient type
+		cursor.execute(
+			"""INSERT INTO ingredient_types (name, max_amount, image_id, unit_count, is_volume) VALUES(?, ?, ?, 0, TRUE);""",
+			[name, max_amount, image_id]
+		)
+		ingredient_type_id = cursor.lastrowid
+	
+	# add an ingredient
+	cursor.execute(
+		"""INSERT INTO ingredients (ingredient_type_id, current_amount) VALUES(?, ?);""",
+		[ingredient_type_id, current_amount]
+	)
+
+	# update 'bottle count'
+	cursor.execute(
+		"""UPDATE ingredient_types SET unit_count = unit_count + 1 WHERE id = ?""",
+		[ingredient_type_id]
 	)
 
 	connection.commit()
@@ -69,24 +112,39 @@ def add_ingredient():
 		"name": name,
 		"maxAmount": max_amount,
 		"amount": current_amount,
-		"image": image_source,
+		"image": database_name,
 	})
 
 @app.route("/get-ingredients/")
 def get_ingredients():
 	connection, cursor = create_connection()
 	
-	results = cursor.execute("""SELECT i.name, i.max_amount, i.current_amount, im.source FROM ingredients i LEFT JOIN images im ON i.image_id = im.id;""").fetchall()
+	results = cursor.execute(
+		"""SELECT name, max_amount, unit_count, source, SUM(current_amount)
+			 FROM ingredient_types i
+			 LEFT JOIN images im ON i.image_id = im.id
+			 JOIN ingredients ing ON i.id = ing.ingredient_type_id
+			 GROUP BY i.id;"""
+	).fetchall()
 	array = []
 	for result in results:
 		array.append({
 			"name": result[0],
+			"bottles": result[2],
 			"maxAmount": result[1],
-			"amount": result[2],
+			"amount": 0,
 			"image": result[3],
 		})
 
 	return json.dumps(array)
+
+detection = re.compile(r"^[a-z]+\.png$")
+@app.route("/images/<image>")
+def images(image):
+	if detection.match(image) != None and os.path.isfile(f"{LOCAL_IMAGES}/{image}"):
+		return send_from_directory(LOCAL_IMAGES, image)
+	else:
+		return ""
 
 if __name__ == '__main__':
 	if not os.path.isdir(LOCAL):
@@ -94,6 +152,9 @@ if __name__ == '__main__':
 
 	if not os.path.isdir(LOCAL_STORAGE):
 		os.mkdir(LOCAL_STORAGE)
+	
+	if not os.path.isdir(LOCAL_IMAGES):
+		os.mkdir(LOCAL_IMAGES)
 
 	# create tables if we don't have them
 	connection, cursor = create_connection()

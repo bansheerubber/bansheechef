@@ -1,0 +1,45 @@
+.modal-blackout {
+	position: fixed;
+	top: 0;
+	left: 0;
+	z-index: 100;
+	width: 100vw;
+	height: 100vh;
+	background-color: rgba(0, 0, 0, 0.2);
+}
+
+.modal {
+	position: fixed;
+	z-index: 101;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%);
+	width: 50vw;
+	background-color: #EEE;
+	border-radius: 5px;
+}
+
+.modal .modal-header {
+	display: flex;
+	flex-direction: row-reverse;
+	padding: 0.5em 0.5em 0em 0.5em;
+}
+
+.modal .modal-header>button {
+	border: 0;
+	background: 0;
+	font-size: 1.25em;
+	color: #555;
+}
+
+.modal .modal-header>button:active {
+	outline: 0 !important;
+}
+
+.modal .modal-header>button:focus {
+	outline: 0 !important;
+}
+
+.modal .modal-body {
+	padding: 0em 1em 1em 1em;
+}

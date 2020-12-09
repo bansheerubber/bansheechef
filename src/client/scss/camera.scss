@@ -1,0 +1,41 @@
+.camera {
+	position: relative;
+	width: 100%;
+}
+
+.camera video {
+	width: 100%;
+}
+
+.camera canvas {
+	position: absolute;
+	top: 0;
+	left: 50%;
+	transform: translate(-50%, 0%);
+	z-index: 2;
+	width: 100%;
+}
+
+.camera button {
+	margin: 0.5em 0.5em 0em 0.5em;
+	width: 200px;
+}
+
+.camera .buttons {
+	display: flex;
+	justify-content: center;
+}
+
+.camera .temp-video {
+	background-color: #BBB;
+	margin: auto;
+	width: 400px;
+	height: 400px;
+}
+
+.camera .video-cover {
+	position: absolute;
+	top: 0;
+	left: 0;
+	background-color: #BBB;
+}

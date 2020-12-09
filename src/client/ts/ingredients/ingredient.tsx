@@ -1,11 +1,13 @@
 import * as React from "react"
 import { connect } from "react-redux"
+import { convertToReasonableMeasurement } from "../helpers/convertUnits"
+import { pluralize } from "../helpers/pluralize"
 import { CONSTANTS } from "./constants"
 import { setDraggable, setSelectedIngredient } from "./ingredientActions"
-import { IngredientData } from "./ingredientData"
+import { IngredientTypeData } from "./ingredientData"
 
 export interface IngredientProps {
-	data?: IngredientData
+	data?: IngredientTypeData
 	canDrag?: boolean
 	style?: React.CSSProperties
 }
@@ -15,7 +17,7 @@ interface IngredientReduxDispatch {
 	setDraggable: (draggable: {
 		x?: number,
 		y?: number,
-		data?: IngredientData,
+		data?: IngredientTypeData,
 	}) => void
 }
 
@@ -92,11 +94,11 @@ class Ingredient extends React.Component<OwnProps, IngredientState> {
 			style={this.props.style}
 		>
 			<div style={{
-				backgroundImage: `url(${this.props.data?.image})`
+				backgroundImage: `url(${this.props.data?.image ? this.props.data?.image : CONSTANTS.NO_IMAGE})`
 			}}></div>
 			<div>
-				<div>{this.props.data?.name}</div>
-				<div>{this.props.data?.amount}, {this.props.data?.percentLeft}</div>
+				<b>{this.props.data?.name}</b>
+				<div>{this.props.data?.bottles} {pluralize(this.props.data?.bottles, "item")}, {convertToReasonableMeasurement(this.props.data?.maxAmount || 0)} remaining</div>
 			</div>
 		</div>
 	}
@@ -110,7 +112,7 @@ const mapDispatchToProps = (dispatch): IngredientReduxDispatch => ({
 	setDraggable: (draggable: {
 		x?: number,
 		y?: number,
-		data?: IngredientData,
+		data?: IngredientTypeData,
 	}) => {
 		dispatch(setDraggable(draggable))
 	}

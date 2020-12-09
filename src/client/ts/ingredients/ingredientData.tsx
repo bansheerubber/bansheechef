@@ -1,6 +1,6 @@
-export interface IngredientData {
+export interface IngredientTypeData {
 	image: string
 	name: string
-	amount: string
-	percentLeft: string
+	maxAmount: number
+	bottles: number
 }
