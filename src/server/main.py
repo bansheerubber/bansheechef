@@ -41,8 +41,43 @@ def get_random_image_name():
 	return "".join(choice(ascii_lowercase) for i in range(8))
 
 """
+	deletes an individual ingredient with specified ID
+"""
+@app.route("/delete-ingredient/", methods=["POST"])
+def delete_ingredient():
+	connection, cursor = create_connection()
+
+	id = request.values.get("id")
+	cursor.execute("""DELETE FROM ingredients WHERE id = ?;""", [id])
+
+	if cursor.rowcount > 0:
+		type_id = request.values.get("typeId")
+		cursor.execute(
+			"""UPDATE ingredient_types SET unit_count = unit_count - 1 WHERE id = ?;""",
+			[type_id]
+		)
+	
+		connection.commit()
+		connection.close()
+		return '{"success": true}'
+	else:
+		connection.close()
+		return '{"success": false}'
+
+"""
 	'name' and 'max_amount' required
 	'current_amount' defaults to 'max_amount' if omitted
+
+	returns a ingredient encoded as json:
+	{
+		// data from individual ingredient
+		amount: number
+		
+		// data from type
+		maxAmount: number
+		name: string
+		image: string
+	}
 """
 @app.route("/add-ingredient/", methods=["POST"])
 def add_ingredient():
@@ -98,21 +133,31 @@ def add_ingredient():
 		"""INSERT INTO ingredients (ingredient_type_id, current_amount) VALUES(?, ?);""",
 		[ingredient_type_id, current_amount]
 	)
+	ingredient_id = cursor.lastrowid
 
-	# update 'bottle count'
+	# update unit count
 	cursor.execute(
-		"""UPDATE ingredient_types SET unit_count = unit_count + 1 WHERE id = ?""",
+		"""UPDATE ingredient_types SET unit_count = unit_count + 1 WHERE id = ?;""",
 		[ingredient_type_id]
 	)
+
+	result = cursor.execute(
+		"""SELECT unit_count FROM ingredient_types WHERE id = ?;""",
+		[ingredient_type_id]
+	)
+	units = result.fetchone()[0]
 
 	connection.commit()
 	connection.close()
 
 	return json.dumps({
-		"name": name,
-		"maxAmount": max_amount,
 		"amount": current_amount,
+		"id": ingredient_id,
 		"image": database_name,
+		"maxAmount": max_amount,
+		"name": name,
+		"typeId": ingredient_type_id,
+		"units": units,
 	})
 
 @app.route("/get-ingredients/")
@@ -120,7 +165,7 @@ def get_ingredients():
 	connection, cursor = create_connection()
 	
 	results = cursor.execute(
-		"""SELECT name, max_amount, unit_count, source, SUM(current_amount)
+		"""SELECT name, max_amount, unit_count, source, SUM(current_amount), i.id
 			 FROM ingredient_types i
 			 LEFT JOIN images im ON i.image_id = im.id
 			 JOIN ingredients ing ON i.id = ing.ingredient_type_id
@@ -129,12 +174,14 @@ def get_ingredients():
 	array = []
 	for result in results:
 		array.append({
-			"name": result[0],
-			"bottles": result[2],
-			"maxAmount": result[1],
-			"amount": 0,
 			"image": result[3],
+			"maxAmount": result[1],
+			"name": result[0],
+			"typeId": result[5],
+			"units": result[2],
 		})
+	
+	connection.close()
 
 	return json.dumps(array)
 

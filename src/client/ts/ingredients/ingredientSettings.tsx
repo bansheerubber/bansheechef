@@ -27,7 +27,7 @@ class IngredientsSettings extends React.Component<OwnProps> {
 			<div className="preview">
 				<h1>{selectedIngredient.name}</h1>
 				<img src={selectedIngredient.image ? selectedIngredient.image : CONSTANTS.NO_IMAGE} />
-				<h3>{selectedIngredient.bottles} {pluralize(selectedIngredient.bottles, "item")}</h3>
+				<h3>{selectedIngredient.units} {pluralize(selectedIngredient.units, "item")}</h3>
 			</div>
 			<div>
 				{/* options */}

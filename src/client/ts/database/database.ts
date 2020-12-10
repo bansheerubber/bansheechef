@@ -3,10 +3,10 @@ import { IngredientTypeData } from "../ingredients/ingredientData";
 
 // middle end for the database, whatever kind i end up using
 export default class Database {
-	static getIngredients(): Promise<IngredientTypeData[]> {
+	static getIngredients(): Promise<any[]> {
 		return new Promise(async (resolve, reject) => {
 			const ingredients = await requestBackend("/get-ingredients/")
-			resolve(ingredients as IngredientTypeData[])
+			resolve(ingredients as any[])
 		})
 	}
 }

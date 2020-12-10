@@ -47,3 +47,24 @@
 .amount-input {
 	display: flex;
 }
+
+.barcode-input {
+	display: flex;
+}
+
+.barcode-input input {
+	font-size: 14pt;
+	padding: 0.5em 0.7em;
+	border-radius: 4px;
+	border: 2px solid #BBB;
+	color: #444;
+	border-right: 0;
+	border-top-right-radius: 0;
+	border-bottom-right-radius: 0;
+}
+
+.barcode-input button {
+	border-left: 0;
+	border-top-left-radius: 0;
+	border-bottom-left-radius: 0;
+}

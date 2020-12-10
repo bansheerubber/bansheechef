@@ -41,28 +41,29 @@ $settings-size: 25vw;
 	user-select: none;
 }
 
-.ingredients>div {
+.ingredients .ingredient {
+	display: flex;
+	flex-direction: column;
+	margin: 0.5em;
+	border-radius: 10px;
+	position: relative;
+}
+
+.ingredient.dragging {
 	display: flex;
 	flex-direction: column;
 	margin: 0.5em;
 	border-radius: 10px;
 }
 
-.ingredients>div.dragging {
-	display: flex;
-	flex-direction: column;
-	margin: 0.5em;
-	border-radius: 10px;
-}
-
-.ingredients>div.dragging>div {
+.ingredient.dragging>div {
 	background-color: transparent !important;
 	color: transparent !important;
 	background-image: none !important;
 	border: 0 !important;
 }
 
-.ingredients>div>div:first-child {
+.ingredient .icon {
 	width: 200px;
 	height: 200px;
 	background-position: 50%;
@@ -78,7 +79,7 @@ $settings-size: 25vw;
 	box-sizing: border-box;
 }
 
-.ingredients>div>div:last-child {
+.ingredient .info {
 	background-color: #E0E0E0;
 	border-bottom-left-radius: 10px;
 	border-bottom-right-radius: 10px;
@@ -90,22 +91,35 @@ $settings-size: 25vw;
 	box-sizing: border-box;
 }
 
+.ingredient .delete-button {
+	border-radius: 100%;
+	background-color: #bbb;
+	position: absolute;
+	right: -8px;
+	top: -8px;
+	width: 30px;
+	height: 30px;
+	font-size: 16pt;
+	line-height: 23pt;
+	text-align: center;
+} 
+
 .add-ingredient {
 	display: flex;
-	flex-direction: column;
+	flex-direction: row;
 	align-items: center;
 }
 
-.add-ingredient>div:first-child {
+.add-ingredient>div:first-child>div:first-child {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	width: 100%;
 }
 
-.add-ingredient>div:first-child div {
-	width: 300px;
-	height: 300px;
+.add-ingredient>div:first-child>div:first-child div {
+	width: 250px;
+	height: 250px;
 	background-position: 50%;
 	background-size: auto 100%;
 }
@@ -122,7 +136,10 @@ $settings-size: 25vw;
 
 .add-ingredient .added-list {
 	width: 100%;
-	height: 300px;
-	border: 1px solid #CCC;
+	height: 500px;
+	border: 2px solid #CCC;
 	border-radius: 4px;
+	margin-left: 1em;
+	box-sizing: border-box;
+	overflow: auto;
 }

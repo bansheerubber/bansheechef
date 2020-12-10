@@ -8,6 +8,9 @@ import Modal from "../modal/modal"
 import { State } from "../reducer"
 import AmountInput from "./amountInput"
 import { setAddIngredientShown } from "./ingredientActions"
+import { IngredientData, IngredientTypeData, translateIngredient, translateIngredientType } from "./ingredientData"
+import Ingredient from "./ingredient"
+import BarcodeInput from "./barcodeInput"
 
 interface AddIngredientReduxState {
 	addIngredientShown: boolean
@@ -23,6 +26,7 @@ interface AddIngredientReduxDispatch {
 type OwnProps = AddIngredientReduxState & AddIngredientReduxDispatch
 
 interface AddIngredientModalState {
+	addedIngredients: IngredientData[]
 	amount: Cups
 	name: string
 }
@@ -32,9 +36,28 @@ class AddIngredientModal extends React.Component<OwnProps, AddIngredientModalSta
 		super(props)
 
 		this.state = {
+			addedIngredients: [],
 			amount: 0,
 			name: "",
 		}
+	}
+
+	deleteIngredient(ingredient: IngredientData) {
+		requestBackend(
+			"/delete-ingredient/",
+			"POST",
+			{
+				id: ingredient.id,
+				typeId: ingredient.type.id,
+			}
+		).then((data: any) => {
+			if(data.success) {
+				this.state.addedIngredients.splice(this.state.addedIngredients.indexOf(ingredient), 1)
+				this.setState({
+					addedIngredients: [...this.state.addedIngredients],
+				})
+			}
+		})
 	}
 	
 	uploadIngredient() {
@@ -55,7 +78,12 @@ class AddIngredientModal extends React.Component<OwnProps, AddIngredientModalSta
 				maxAmount: amount,
 				picture: pictureBlob,
 			},
-		)
+		).then((data: any) => {
+			this.state.addedIngredients.unshift(translateIngredient(data))
+			this.setState({
+				addedIngredients: [...this.state.addedIngredients],
+			})
+		})
 	}
 	
 	render(): JSX.Element {
@@ -70,58 +98,68 @@ class AddIngredientModal extends React.Component<OwnProps, AddIngredientModalSta
 			addIngredientShown ? <Modal
 				className="add-ingredient"
 				onClose={close}
-				style={{
-					display: "flex",
-				}}
 			>
 				<div>
-					<div style={{
-						backgroundImage: !picture ? "url(./data/no-image.png)" : `url(${picture})`,
-						borderTopRightRadius: 4,
-						borderTopLeftRadius: 4,
-					}} />
-					<button
-						className="button gray"
-						onClick={showCamera}
+					<div>
+						<div style={{
+							backgroundImage: !picture ? "url(./data/no-image.png)" : `url(${picture})`,
+							borderTopRightRadius: 4,
+							borderTopLeftRadius: 4,
+						}} />
+						<button
+							className="button gray"
+							onClick={showCamera}
+							style={{
+								width: 250,
+								borderRadius: 0,
+								borderBottomRightRadius: 4,
+								borderBottomLeftRadius: 4,
+							}}
+						>
+							Upload Image
+						</button>
+					</div>
+					<div
+						className="inputs"
 						style={{
-							width: 300,
-							borderRadius: 0,
-							borderBottomRightRadius: 4,
-							borderBottomLeftRadius: 4,
+							width: 250,
 						}}
 					>
-						Upload Image
-					</button>
-				</div>
-				<div
-					className="inputs"
-					style={{
-						width: 300,
-					}}
-				>
-					<input
-						className="text-input"
-						onChange={(event) => this.setState({
-							name: event.currentTarget.value,
-						})}
-						placeholder="Name"
-						value={this.state.name}
-					/>
-					<AmountInput
-						onChange={(amount) => this.setState({
-							amount,
-						})}
-					/>
-					<button
-						className="button blue"
-						onClick={() => this.uploadIngredient()}
-					>
-						Add Ingredient
-					</button>
+						<input
+							className="text-input"
+							onChange={(event) => this.setState({
+								name: event.currentTarget.value,
+							})}
+							placeholder="Name"
+							value={this.state.name}
+						/>
+						<AmountInput
+							onChange={(amount) => this.setState({
+								amount,
+							})}
+						/>
+						<button className="button gray">Scan Barcode</button>
+						<button
+							className="button blue"
+							onClick={() => this.uploadIngredient()}
+						>
+							Add Ingredient
+						</button>
+					</div>
 				</div>
 				{/* list of the ingredients you've added */}
-				<div className="added-list">
-
+				<div
+					className="added-list ingredients"
+				>
+					{this.state.addedIngredients.map(
+						data => <Ingredient
+							canDelete={true}
+							canDrag={false}
+							onDelete={() => this.deleteIngredient(data)}
+							data={data}
+							dataType={data.type}
+						/>
+					)}
 				</div>
 			</Modal>
 			: null

@@ -12,31 +12,14 @@ import Database from "./database/database"
 import { setIngredients } from "./ingredients/ingredientActions"
 import AddIngredientModal from "./ingredients/addIngredientModal"
 import CameraModel from "./camera/cameraModal"
-import { resolveUrl } from "./helpers/resolveUrl"
 import { convertToReasonableMeasurement } from "./helpers/convertUnits"
+import { translateIngredientType } from "./ingredients/ingredientData"
 
 const store = createStore(reducer)
 window["store"] = store;
 
-const translateIngredients = ({
-	name,
-	bottles,
-	maxAmount,
-	image,
-}: {
-	name: string,
-	bottles: number,
-	maxAmount: number,
-	image: string
-}) => ({
-	name,
-	bottles,
-	maxAmount,
-	image: resolveUrl(image),
-});
-
 (async function egg() {
-	const ingredients = (await Database.getIngredients()).map(translateIngredients)
+	const ingredients = (await Database.getIngredients()).map(translateIngredientType)
 	store.dispatch(setIngredients(ingredients))
 })()
 

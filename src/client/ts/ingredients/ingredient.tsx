@@ -4,11 +4,23 @@ import { convertToReasonableMeasurement } from "../helpers/convertUnits"
 import { pluralize } from "../helpers/pluralize"
 import { CONSTANTS } from "./constants"
 import { setDraggable, setSelectedIngredient } from "./ingredientActions"
-import { IngredientTypeData } from "./ingredientData"
+import { IngredientData, IngredientTypeData } from "./ingredientData"
 
 export interface IngredientProps {
-	data?: IngredientTypeData
+	dataType?: IngredientTypeData
+	data?: IngredientData
+	/**
+	 * defaults to false
+	 */
+	canDelete?: boolean
+
+	/**
+	 * defaults to true
+	 */
 	canDrag?: boolean
+
+	onDelete?: () => void
+
 	style?: React.CSSProperties
 }
 
@@ -17,7 +29,7 @@ interface IngredientReduxDispatch {
 	setDraggable: (draggable: {
 		x?: number,
 		y?: number,
-		data?: IngredientTypeData,
+		dataType?: IngredientTypeData,
 	}) => void
 }
 
@@ -40,6 +52,7 @@ class Ingredient extends React.Component<OwnProps, IngredientState> {
 	onClick(event) {
 		const {
 			data,
+			dataType,
 			setSelectedIngredient,
 			setDraggable,
 		} = this.props
@@ -50,7 +63,7 @@ class Ingredient extends React.Component<OwnProps, IngredientState> {
 		
 		if(performance.now() - this.lastClickTime < CONSTANTS.DOUBLE_CLICK_TIME) {			
 			setDraggable({
-				data,
+				dataType,
 				x: event.pageX,
 				y: event.pageY,
 			})
@@ -66,7 +79,7 @@ class Ingredient extends React.Component<OwnProps, IngredientState> {
 				document.removeEventListener("mouseup", mouseUp)
 
 				setDraggable({
-					data: null,
+					dataType: null,
 				})
 	
 				this.setState({
@@ -88,17 +101,34 @@ class Ingredient extends React.Component<OwnProps, IngredientState> {
 	}
 	
 	render(): JSX.Element {
+		const {
+			canDelete,
+			onDelete,
+		} = this.props
+		
 		return <div
-			className={this.state.isDragging ? "dragging" : ""}
+			className={`ingredient ${this.state.isDragging ? "dragging" : ""}`}
 			onMouseDown={event => this.onClick(event)}
 			style={this.props.style}
 		>
-			<div style={{
-				backgroundImage: `url(${this.props.data?.image ? this.props.data?.image : CONSTANTS.NO_IMAGE})`
-			}}></div>
-			<div>
-				<b>{this.props.data?.name}</b>
-				<div>{this.props.data?.bottles} {pluralize(this.props.data?.bottles, "item")}, {convertToReasonableMeasurement(this.props.data?.maxAmount || 0)} remaining</div>
+			{
+				canDelete ? <div
+					className="delete-button"
+					onClick={onDelete}
+				>
+					&#10005;
+				</div>
+				: null
+			}
+			<div
+				className="icon"
+				style={{
+					backgroundImage: `url(${this.props.dataType?.image ? this.props.dataType?.image : CONSTANTS.NO_IMAGE})`
+				}}
+			/>
+			<div className="info">
+				<b>{this.props.dataType?.name}</b>
+				<div>{this.props.dataType?.units} {pluralize(this.props.dataType?.units, "item")}, {convertToReasonableMeasurement(this.props.dataType?.maxAmount || 0)} remaining</div>
 			</div>
 		</div>
 	}
@@ -106,7 +136,7 @@ class Ingredient extends React.Component<OwnProps, IngredientState> {
 
 const mapDispatchToProps = (dispatch): IngredientReduxDispatch => ({
 	setSelectedIngredient: (ingredient: Ingredient) => {
-		dispatch(setSelectedIngredient(ingredient.props.data))
+		dispatch(setSelectedIngredient(ingredient.props.dataType))
 	},
 
 	setDraggable: (draggable: {

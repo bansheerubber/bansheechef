@@ -8,7 +8,7 @@ export const setSelectedIngredient = (ingredient: IngredientTypeData) => ({
 export const setDraggable = (draggable: {
 	x?: number,
 	y?: number,
-	data?: IngredientTypeData,
+	dataType?: IngredientTypeData,
 }) => ({
   type: setDraggable,
   draggable,

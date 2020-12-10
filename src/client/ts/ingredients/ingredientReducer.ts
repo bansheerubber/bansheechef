@@ -11,7 +11,7 @@ export interface IngredientState {
 	draggable: {
 		x: number,
 		y: number,
-		data: IngredientTypeData
+		dataType: IngredientTypeData
 	}
 	ingredients: IngredientTypeData[]
 	selectedIngredient: IngredientTypeData
@@ -22,7 +22,7 @@ const createDefaultState = () => ({
 	draggable: {
 		x: 0,
 		y: 0,
-		data: null,
+		dataType: null,
 	},
 	ingredients: [],
 	selectedIngredient: null,

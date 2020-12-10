@@ -40,7 +40,7 @@ class IngredientSelection extends React.Component<OwnProps> {
 			}}
 		>
 			<h1>Your Stock:</h1>
-			<div id="ingredients" className="ingredients">{children}{ingredients.map(data => <Ingredient data={data} />)}</div>
+			<div id="ingredients" className="ingredients">{children}{ingredients.map(data => <Ingredient dataType={data} />)}</div>
 		</div>
 	}
 }

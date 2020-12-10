@@ -9,7 +9,7 @@ interface HeaderReduxState {
 	draggable: {
 		x: number,
 		y: number,
-		data: IngredientTypeData,
+		dataType: IngredientTypeData,
 	}
 }
 
@@ -30,7 +30,7 @@ class Header extends React.Component<OwnProps> {
 		return <div className="header">
 			<img src="./data/bansheechef.png" />
 			{
-				draggable.data ? <>
+				draggable.dataType ? <>
 					<button className="button dropzone shopping-list">Shopping List</button>
 					<button className="button dropzone trash">Trash</button>
 				</>
