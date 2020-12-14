@@ -29,6 +29,7 @@ class CameraModel extends React.Component<OwnProps> {
 				<Camera
 					onAccept={() => setCameraModalShown(false)}
 					screenshottable={true}
+					streamVideo="/barcode-offer/"
 				/>
 			</Modal>
 			: null

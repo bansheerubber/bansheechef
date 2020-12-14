@@ -1,12 +1,23 @@
 import * as React from "react"
 import { connect } from "react-redux"
 import adapter from "webrtc-adapter"
+import requestBackend from "../helpers/requestBackend"
 import { State } from "../reducer"
 import { setCameraPicture } from "./cameraActions"
 
 interface CameraProps {
+	/**
+	 * when we accept the screenshot
+	 */
 	onAccept?: () => void
+	/**
+	 * whether or not we can take screenshots
+	 */
 	screenshottable?: boolean
+	/**
+	 * whether or not we stream video to the specified URL path using rtc
+	 */
+	streamVideo?: string
 }
 
 interface CameraReduxState {
@@ -46,6 +57,44 @@ class Camera extends React.Component<OwnProps, CameraState> {
 		}
 	}
 
+	async startRTC(stream: MediaStream) {
+		const connection = new RTCPeerConnection({
+			sdpSemantics: "unified-plan",
+		} as RTCConfiguration)
+
+		for(const track of stream.getVideoTracks()) {
+			connection.addTrack(track, stream)
+		}
+	
+		const offer = await connection.createOffer()
+		await connection.setLocalDescription(offer)
+
+		await new Promise<void>((resolve) => {
+			if(connection.iceGatheringState === 'complete') {
+				resolve()
+			}
+			else {
+				const checkState = () => {
+					if(connection.iceGatheringState === 'complete') {
+						connection.removeEventListener('icegatheringstatechange', checkState)
+						resolve()
+					}
+				}
+				connection.addEventListener('icegatheringstatechange', checkState)
+			}
+		})
+	
+		const remoteOffer = await requestBackend(this.props.streamVideo, "POST", {
+			sdp: connection.localDescription.sdp,
+			type: connection.localDescription.type,
+		})
+		
+		await connection.setRemoteDescription(remoteOffer)
+	}
+
+	/**
+	 * shows the crop boundary for taking screenshots
+	 */
 	showCropBoundary() {
 		this.setState({
 			cover: false,
@@ -96,7 +145,8 @@ class Camera extends React.Component<OwnProps, CameraState> {
 	
 	componentDidMount() {
 		const {
-			screenshottable
+			screenshottable,
+			streamVideo,
 		} = this.props
 
 		if(screenshottable) {
@@ -126,10 +176,16 @@ class Camera extends React.Component<OwnProps, CameraState> {
 					videoHeight: this.video.current.clientHeight,
 				})
 
-				this.showCropBoundary()
+				if(screenshottable) {
+					this.showCropBoundary()
+				}
 			})
 			
 			this.video.current.srcObject = stream
+
+			if(streamVideo) {
+				this.startRTC(stream)
+			}
 		})
 	}
 
@@ -171,6 +227,9 @@ class Camera extends React.Component<OwnProps, CameraState> {
 		})
 	}
 
+	/**
+	 * retake the screenshot
+	 */
 	retake() {
 		const {
 			screenshot,

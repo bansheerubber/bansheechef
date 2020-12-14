@@ -10,7 +10,6 @@ import AmountInput from "./amountInput"
 import { setAddIngredientShown } from "./ingredientActions"
 import { IngredientData, IngredientTypeData, translateIngredient, translateIngredientType } from "./ingredientData"
 import Ingredient from "./ingredient"
-import BarcodeInput from "./barcodeInput"
 
 interface AddIngredientReduxState {
 	addIngredientShown: boolean
