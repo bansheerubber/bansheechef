@@ -3,6 +3,7 @@ import { connect } from "react-redux"
 import adapter from "webrtc-adapter"
 import requestBackend from "../helpers/requestBackend"
 import { State } from "../reducer"
+import { Camera } from "./camera"
 import { setCameraPicture } from "./cameraActions"
 
 interface CameraProps {
@@ -18,6 +19,8 @@ interface CameraProps {
 	 * whether or not we stream video to the specified URL path using rtc
 	 */
 	streamVideo?: string
+
+	style?: React.CSSProperties
 }
 
 interface CameraReduxState {
@@ -37,10 +40,11 @@ interface CameraState {
 
 type OwnProps = CameraProps & CameraReduxState & CameraReduxDispatch
 
-class Camera extends React.Component<OwnProps, CameraState> {
+class CameraView extends React.Component<OwnProps, CameraState> {
 	private canvas: React.RefObject<HTMLCanvasElement>
 	private video: React.RefObject<HTMLVideoElement>
 	private videoCover: React.RefObject<HTMLDivElement>
+	private connection: RTCPeerConnection
 	
 	constructor(props) {
 		super(props)
@@ -55,41 +59,6 @@ class Camera extends React.Component<OwnProps, CameraState> {
 			videoWidth: 0,
 			videoHeight: 0,
 		}
-	}
-
-	async startRTC(stream: MediaStream) {
-		const connection = new RTCPeerConnection({
-			sdpSemantics: "unified-plan",
-		} as RTCConfiguration)
-
-		for(const track of stream.getVideoTracks()) {
-			connection.addTrack(track, stream)
-		}
-	
-		const offer = await connection.createOffer()
-		await connection.setLocalDescription(offer)
-
-		await new Promise<void>((resolve) => {
-			if(connection.iceGatheringState === 'complete') {
-				resolve()
-			}
-			else {
-				const checkState = () => {
-					if(connection.iceGatheringState === 'complete') {
-						connection.removeEventListener('icegatheringstatechange', checkState)
-						resolve()
-					}
-				}
-				connection.addEventListener('icegatheringstatechange', checkState)
-			}
-		})
-	
-		const remoteOffer = await requestBackend(this.props.streamVideo, "POST", {
-			sdp: connection.localDescription.sdp,
-			type: connection.localDescription.type,
-		})
-		
-		await connection.setRemoteDescription(remoteOffer)
 	}
 
 	/**
@@ -152,41 +121,31 @@ class Camera extends React.Component<OwnProps, CameraState> {
 		if(screenshottable) {
 			this.props.screenshot(null, null) // reset the screenshot field
 		}
-		
-		navigator.mediaDevices.getUserMedia({
-			video: {
-				width: {
-					ideal: 1280,
-				},
-				height: {
-					ideal: 720,
-				},
-			} 
-		}).then((stream) => {
-			this.video.current.addEventListener("play", (event) => {
-				this.canvas.current.width = this.video.current.videoWidth
-				this.canvas.current.height = this.video.current.videoHeight
+				
+		this.video.current.addEventListener("play", (event) => {
+			this.canvas.current.width = this.video.current.videoWidth
+			this.canvas.current.height = this.video.current.videoHeight
 
-				this.setState({
-					isRecording: true,
-				})
-
-				this.setState({
-					videoWidth: this.video.current.clientWidth,
-					videoHeight: this.video.current.clientHeight,
-				})
-
-				if(screenshottable) {
-					this.showCropBoundary()
-				}
+			this.setState({
+				isRecording: true,
 			})
-			
-			this.video.current.srcObject = stream
 
-			if(streamVideo) {
-				this.startRTC(stream)
+			this.setState({
+				videoWidth: this.video.current.clientWidth,
+				videoHeight: this.video.current.clientHeight,
+			})
+
+			if(screenshottable) {
+				this.showCropBoundary()
 			}
 		})
+		
+		Camera.startCamera().then((stream) => {
+			this.video.current.srcObject = stream
+		})
+	}
+
+	componentWillUnmount() {
 	}
 
 	screenshot() {
@@ -243,9 +202,10 @@ class Camera extends React.Component<OwnProps, CameraState> {
 			onAccept,
 			picture,
 			screenshottable,
+			style,
 		} = this.props
-		
-		return <div className="camera">
+
+		return <div className="camera" style={style}>
 			<canvas ref={this.canvas} />
 			<div
 				className="temp-video"
@@ -269,23 +229,26 @@ class Camera extends React.Component<OwnProps, CameraState> {
 					display: this.state.isRecording ? "block" : "none",
 				}}
 			/>
-			<div className="buttons">
-				{
-					screenshottable && !this.state.cover ? <button className="button blue" onClick={() => this.screenshot()}>
-						Take Picture
-					</button> : null
-				}
-				{
-					screenshottable && this.state.cover ? <button className="button blue" onClick={() => onAccept()}>
-						Submit Picture
-					</button> : null
-				}
-				{
-					screenshottable && this.state.cover ? <button className="button blue" onClick={() => this.retake()}>
-						Re-Take Picture
-					</button> : null
-				}
-			</div>
+			{
+				screenshottable ? <div className="buttons">
+					{
+						screenshottable && !this.state.cover ? <button className="button blue" onClick={() => this.screenshot()}>
+							Take Picture
+						</button> : null
+					}
+					{
+						screenshottable && this.state.cover ? <button className="button blue" onClick={() => onAccept()}>
+							Submit Picture
+						</button> : null
+					}
+					{
+						screenshottable && this.state.cover ? <button className="button blue" onClick={() => this.retake()}>
+							Re-Take Picture
+						</button> : null
+					}
+				</div>
+				: null
+			}
 		</div>
 	}
 }
@@ -301,4 +264,4 @@ const mapDispatchToProps = (dispatch) => ({
 export default connect(
 	mapStateToProps,
 	mapDispatchToProps,
-)(Camera)
+)(CameraView)

@@ -36,10 +36,7 @@ def visualize_barcode(im, barcodes, already_detected):
 		already_detected.append(barcode.data.decode("utf-8"))
 
 		found.append(barcode.data.decode("utf-8"))
-	
-	if len(found) != 0:
-		print("found by simple")
-	
+
 	return found
 
 def simple_detection(frame, already_detected):
@@ -48,6 +45,10 @@ def simple_detection(frame, already_detected):
 
 	barcodes = pyzbar.decode(im)
 	found = visualize_barcode(frame, barcodes, already_detected)
+
+	if len(found) != 0:
+		print("found by simple")
+
 	return (found, im)
 
 
@@ -73,21 +74,44 @@ def complex_detection(frame, already_detected):
 
 	return (found, im)
 
+def dump(obj):
+  for attr in dir(obj):
+    print("obj.%s = %r" % (attr, getattr(obj, attr)))
+
 class VideoTransformTrack(MediaStreamTrack):
 	kind = "video"
 
-	def __init__(self, track):
+	def __init__(self, session, track):
 		super().__init__()
 		self.track = track
-		print("created video transform track")
+		self.session = session
 	
 	async def recv(self):
 		original_frame = await self.track.recv()
-		frame = original_frame.to_ndarray(format="bgr24")
+		original_frame = await self.track.recv() # skip a frame for speed
 
-		detected1, im1 = simple_detection(frame, [])
+		# skip frames if we start falling behind
+		if self.track._queue.qsize() > 10:
+			while self.track._queue.qsize() != 0:
+				await self.track.recv()
+
+		if self.session.barcode_scanning:
+			frame = original_frame.to_ndarray(format="bgr24")
+		
+			detected, im1 = simple_detection(frame, [])
+
+			if self.session.data_channel and len(detected) > 0:
+				self.session.data_channel.send(json.dumps({
+					"found": detected,
+				}))
 
 		return original_frame
+
+class RTCSession:
+	def __init__(self, connection):
+		self.connection = connection
+		self.data_channel = None
+		self.barcode_scanning = True
 
 async def barcode_offer(request):
 	values = await request.post()
@@ -98,26 +122,30 @@ async def barcode_offer(request):
 	offer = RTCSessionDescription(sdp=rtc_sdp, type=rtc_type)
 
 	rtc_peer = RTCPeerConnection()
+	session = RTCSession(rtc_peer)
+
+	rtc_peer.addTransceiver("video", "recvonly")
 
 	@rtc_peer.on("datachannel")
 	def on_datachannel(channel):
+		session.data_channel = channel
+		
 		@channel.on("message")
 		def on_message(message):
-			print("puking")
-	
-	@rtc_peer.on("iceconnectionstatechange")
-	def on_iceconnectionstatechange():
-		print("ICE connection state is %s", rtc_peer.iceConnectionState)
+			if message == "start":
+				session.barcode_scanning = True
+			else:
+				session.barcode_scanning = False
 
 	@rtc_peer.on("track")
 	def on_track(track):
 		# handle video tracks
 		if track.kind == "video":
-			rtc_peer.addTrack(VideoTransformTrack(track))
+			rtc_peer.addTrack(VideoTransformTrack(session, track))
 
-		@track.on("ended")
-		def on_ended():
-			print("track ended")
+		# @track.on("ended")
+		# def on_ended():
+		# 	print("track ended")
 
 	# set the options that the client sent us
 	await rtc_peer.setRemoteDescription(offer)

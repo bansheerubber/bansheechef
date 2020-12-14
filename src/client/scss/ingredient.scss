@@ -136,10 +136,22 @@ $settings-size: 25vw;
 
 .add-ingredient .added-list {
 	width: 100%;
-	height: 500px;
+	height: 630px;
 	border: 2px solid #CCC;
 	border-radius: 4px;
 	margin-left: 1em;
 	box-sizing: border-box;
 	overflow: auto;
+}
+
+.add-ingredient .dialog {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	width: 100%;
+	margin-top: 1em;
+}
+
+.add-ingredient .dialog * {
+	width: 100%;
 }

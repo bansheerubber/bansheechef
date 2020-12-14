@@ -1,7 +1,6 @@
 from flask import Flask, Response, url_for, redirect, render_template, request, session, flash, jsonify, send_from_directory
 import asyncio
 import flask
-import sqlite3
 import os
 import logging
 import json
@@ -17,38 +16,11 @@ from string import ascii_lowercase
 from aiohttp import web
 
 from .barcode.barcode import barcode_offer
-
-HOME = os.getenv("HOME")
-LOCAL = os.path.join(HOME, ".config", "bansheechef")
-LOCAL_STORAGE = os.path.join(LOCAL, "storage")
-LOCAL_IMAGES = os.path.join(LOCAL_STORAGE, "images")
-
-TEMPLATES = os.path.join(os.path.dirname(__file__), "templates")
-STATIC = os.path.join(os.path.dirname(__file__), "static")
+from .barcode.get_barcode import get_barcode
+from .constants import LOCAL, LOCAL_STORAGE, LOCAL_IMAGES, TEMPLATES, STATIC
+from .database import create_connection
 
 app = Flask(__name__)
-
-def create_connection():
-	file = f"{LOCAL_STORAGE}/data.db"
-	connection = sqlite3.connect(file)
-	cursor = connection.cursor()
-
-	results = cursor.execute("""SELECT name FROM sqlite_master WHERE type='table';""").fetchall()
-	if len(results) == 0: # init tables
-		buffer = ""
-		for line in open("./init.sql").readlines():
-			buffer = buffer + line.strip()
-
-			if ";" in buffer:
-				cursor.execute(buffer)
-				buffer = ""
-
-		if ";" in buffer:
-			cursor.execute(buffer)
-			
-		connection.commit()
-	
-	return (connection, cursor)
 
 def get_random_image_name():
 	return "".join(choice(ascii_lowercase) for i in range(8))
@@ -98,8 +70,9 @@ async def add_ingredient(request):
 	name = values.get("name")
 	max_amount = values.get("maxAmount")
 	current_amount = values.get("currentAmount")
+	barcode = values.get("barcode")
 
-	if name == None or max_amount == None or not (type(max_amount) == int or float):
+	if name == None or max_amount == None or not (type(max_amount) == int or float) or barcode == None:
 		return "{}" # error out if name/max_amount isn't provided, or ifs max_amount is not a valid number
 	
 	name = name.strip()
@@ -110,39 +83,44 @@ async def add_ingredient(request):
 		return "{}" # error out if current_amount is not a valid number
 	
 	connection, cursor = create_connection()
-
-	image_id = -1
-	database_name = ""
-	if "picture" in values:
-		# TODO this whole thing really needs to be made secure
-		picture = values["picture"].file
-		image_name = f"{get_random_image_name()}.png"
-		database_name = f"local:{image_name}"
-		filename = f"{LOCAL_IMAGES}/{image_name}"
-
-		cursor.execute("""INSERT INTO images (source) VALUES(?);""", [database_name])
-		image_id = cursor.lastrowid
-
-		file = open(filename, "wb")
-		file.write(picture.read())
-		file.close()
 	
 	# check if we already have an ingredient type
 	cursor.execute(
-		"""SELECT id FROM ingredient_types WHERE name = ? AND max_amount = ?;""",
+		"""SELECT i.id, im.id, im.source
+			 FROM ingredient_types i
+			 LEFT JOIN images im ON im.id = i.image_id
+			 WHERE name = ? AND max_amount = ?;""",
 		[name, max_amount]
 	)
 	result = cursor.fetchall()
 
+	image_id = -1
+	image = ""
 	ingredient_type_id = None
 	if len(result) != 0:
 		# use the result
 		ingredient_type_id = result[0][0]
+		image_id = result[0][1]
+		image = result[0][2]
 	else:
+		if "picture" in values:
+			# TODO this whole thing really needs to be made secure
+			picture = values["picture"].file
+			image_name = f"{get_random_image_name()}.png"
+			image = f"local:{image_name}"
+			filename = f"{LOCAL_IMAGES}/{image_name}"
+
+			cursor.execute("""INSERT INTO images (source) VALUES(?);""", [image])
+			image_id = cursor.lastrowid
+
+			file = open(filename, "wb")
+			file.write(picture.read())
+			file.close()
+		
 		# insert the ingredient type
 		cursor.execute(
-			"""INSERT INTO ingredient_types (name, max_amount, image_id, unit_count, is_volume) VALUES(?, ?, ?, 0, TRUE);""",
-			[name, max_amount, image_id]
+			"""INSERT INTO ingredient_types (name, max_amount, image_id, unit_count, is_volume, barcode) VALUES(?, ?, ?, 0, TRUE, ?);""",
+			[name, max_amount, image_id, barcode]
 		)
 		ingredient_type_id = cursor.lastrowid
 	
@@ -173,7 +151,7 @@ async def add_ingredient(request):
 		body=json.dumps({
 			"amount": current_amount,
 			"id": ingredient_id,
-			"image": database_name,
+			"image": image,
 			"maxAmount": max_amount,
 			"name": name,
 			"typeId": ingredient_type_id,
@@ -242,6 +220,7 @@ if __name__ == '__main__':
 	app.router.add_post("/add-ingredient/", add_ingredient)
 	app.router.add_post("/delete-ingredient/", delete_ingredient)
 	app.router.add_post("/barcode-offer/", barcode_offer)
+	app.router.add_post("/get-barcode/", get_barcode)
 
 	ssl_context = ssl.SSLContext()
 	ssl_context.load_cert_chain(f"{LOCAL}/server.cert", f"{LOCAL}/server.key")

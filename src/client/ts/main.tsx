@@ -23,8 +23,6 @@ window["store"] = store;
 	store.dispatch(setIngredients(ingredients))
 })()
 
-console.log(convertToReasonableMeasurement(1 / 16))
-
 ReactDOM.render(
 	<Provider store={store}>
 		<IngredientsSettings />

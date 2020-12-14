@@ -2,7 +2,7 @@ import * as React from "react"
 import { connect } from "react-redux"
 import Modal from "../modal/modal"
 import { State } from "../reducer"
-import Camera from "./camera"
+import CameraView from "./cameraView"
 import { setCameraModalShown } from "./cameraActions"
 
 interface CameraModalReduxState {
@@ -26,7 +26,7 @@ class CameraModel extends React.Component<OwnProps> {
 			modalShown ? <Modal
 				onClose={() => setCameraModalShown(false)}
 			>
-				<Camera
+				<CameraView
 					onAccept={() => setCameraModalShown(false)}
 					screenshottable={true}
 					streamVideo="/barcode-offer/"
