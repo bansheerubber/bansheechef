@@ -16,13 +16,15 @@ from string import ascii_lowercase
 
 from aiohttp import web
 
-HOME = os.getenv("HOME")
-LOCAL = f"{HOME}/.config/bansheechef"
-LOCAL_STORAGE = f"{LOCAL}/storage"
-LOCAL_IMAGES = f"{LOCAL_STORAGE}/images"
+from .barcode.barcode import barcode_offer
 
-TEMPLATES = "./templates"
-STATIC = "./static"
+HOME = os.getenv("HOME")
+LOCAL = os.path.join(HOME, ".config", "bansheechef")
+LOCAL_STORAGE = os.path.join(LOCAL, "storage")
+LOCAL_IMAGES = os.path.join(LOCAL_STORAGE, "images")
+
+TEMPLATES = os.path.join(os.path.dirname(__file__), "templates")
+STATIC = os.path.join(os.path.dirname(__file__), "static")
 
 app = Flask(__name__)
 
@@ -239,6 +241,7 @@ if __name__ == '__main__':
 	app.router.add_get("/get-ingredients/", get_ingredients)
 	app.router.add_post("/add-ingredient/", add_ingredient)
 	app.router.add_post("/delete-ingredient/", delete_ingredient)
+	app.router.add_post("/barcode-offer/", barcode_offer)
 
 	ssl_context = ssl.SSLContext()
 	ssl_context.load_cert_chain(f"{LOCAL}/server.cert", f"{LOCAL}/server.key")

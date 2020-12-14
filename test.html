@@ -1,65 +1,91 @@
 <!DOCTYPE html>
 <html>
-	<head>
-		<style>
-			.modal-blackout {
-				position: fixed;
-				top: 0;
-				left: 0;
-				z-index: 100;
-				width: 100vw;
-				height: 100vh;
-				background-color: rgba(0, 0, 0, 0.2);
+
+<head>
+</head>
+
+<body>
+	<video id="frog" autoplay></video>
+</body>
+
+<script>
+	function requestBackend(
+		endpoint,
+		queryType = null,
+		queryObject = null,
+	) {
+		return new Promise((resolve, reject) => {
+			let request = new XMLHttpRequest()
+			request.open(queryType || "GET", `https://localhost:5000${endpoint}`, true)
+			request.responseType = "text"
+
+			request.onload = (event) => {
+				resolve(JSON.parse(request.response))
 			}
 
-			.modal {
-				position: fixed;
-				z-index: 101;
-				left: 50%;
-				top: 50%;
-				transform: translate(-50%, -50%);
-				width: 50vw;
-				background-color: #EEE;
-				border-radius: 5px;
+			if (queryObject) {
+				const formData = new FormData()
+				for (const index in queryObject) {
+					if (typeof queryObject[index] === "number") {
+						formData.append(index, `${queryObject[index]}`)
+					}
+					else {
+						formData.append(index, queryObject[index])
+					}
+				}
+				request.send(formData)
 			}
-
-			.modal .header {
-				display: flex;
-				flex-direction: row-reverse;
-				padding: 0.5em 0.5em 0em 0.5em;
+			else {
+				request.send()
 			}
+		})
+	}
 
-			.modal .header>button {
-				border: 0;
-				background: 0;
-				font-size: 1.25em;
-				color: #555;
-			}
+	/*navigator.mediaDevices.getUserMedia({
+		video: {
+			width: {
+				ideal: 1280,
+			},
+			height: {
+				ideal: 720,
+			},
+		} 
+	}).then((stream) => {
+		document.getElementById("frog").srcObject = stream
+	})*/
 
-			.modal .header>button:active {
-				outline: 0 !important;
-			}
+	const connection = new RTCPeerConnection({
+		sdpSemantics: "unified-plan",
+	})
 
-			.modal .header>button:focus {
-				outline: 0 !important;
-			}
+	connection.addEventListener("track", (event) => {
+		console.log("got track")
+	})
 
-			.modal .body {
-				padding: 0em 1em 1em 1em;
-			}
-		</style>
-	</head>
+	connection.addTransceiver(
+		"video", {
+			direction: "sendonly",
+		}
+	)
 
-	<body>
-		hey there everyone
-		<div>
-			<div class="modal">
-				<div class="header">
-					<button>&#10005;</button>
-				</div>
-				<div class="body"></div>
-			</div>
-			<div class="modal-blackout"></div>
-		</div>
-	</body>
+	connection.addTransceiver(
+		"audio", {
+			direction: "inactive",
+		}
+	)
+
+	connection.createOffer().then(async (offer) => {
+		await connection.setLocalDescription(offer)
+
+		requestBackend("/barcode-offer", "POST", {
+			sdp: connection.localDescription.sdp,
+			type: connection.localDescription.type,
+		}).then(async (offer) => {
+			console.log("setting remote description", offer)
+			await connection.setRemoteDescription(offer)
+			console.log("set remote description")
+		})
+	})
+</script>
+
 </html>
