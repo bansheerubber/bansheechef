@@ -26,10 +26,11 @@ export default async function requestBackend(
 	endpoint: string,
 	queryType?: QueryType,
 	queryObject?: QueryObject,
+	host: string = "https://0.0.0.0:5000",
 ): Promise<{}> {
 	return new Promise((resolve, reject) => {
 		let request = new XMLHttpRequest()
-		request.open(queryType || "GET", `http://localhost:5000${endpoint}`, true)
+		request.open(queryType || "GET", `${host}${endpoint}`, true)
 		request.responseType = "text"
 
 		request.onload = (event) => {
@@ -39,6 +40,10 @@ export default async function requestBackend(
 		if(queryObject) {
 			const formData = new FormData()
 			for(const index in queryObject) {
+				if(queryObject[index] === null || queryObject[index] === undefined) {
+					continue
+				}
+				
 				if(typeof queryObject[index] === "number") {
 					formData.append(index, `${queryObject[index]}`)
 				}

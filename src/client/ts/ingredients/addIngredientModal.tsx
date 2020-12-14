@@ -102,7 +102,7 @@ class AddIngredientModal extends React.Component<OwnProps, AddIngredientModalSta
 				<div>
 					<div>
 						<div style={{
-							backgroundImage: !picture ? "url(./data/no-image.png)" : `url(${picture})`,
+							backgroundImage: !picture ? "url(/static/no-image.png)" : `url(${picture})`,
 							borderTopRightRadius: 4,
 							borderTopLeftRadius: 4,
 						}} />

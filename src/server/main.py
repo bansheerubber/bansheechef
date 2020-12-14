@@ -1,17 +1,28 @@
 from flask import Flask, Response, url_for, redirect, render_template, request, session, flash, jsonify, send_from_directory
+import asyncio
 import flask
 import sqlite3
 import os
 import logging
 import json
 import re
+import cv2
+import ssl
+
+from aiortc import VideoStreamTrack, MediaStreamTrack, RTCPeerConnection, RTCSessionDescription
+from aiortc.contrib.media import MediaBlackhole, MediaPlayer, MediaRecorder
 from random import choice
 from string import ascii_lowercase
+
+from aiohttp import web
 
 HOME = os.getenv("HOME")
 LOCAL = f"{HOME}/.config/bansheechef"
 LOCAL_STORAGE = f"{LOCAL}/storage"
 LOCAL_IMAGES = f"{LOCAL_STORAGE}/images"
+
+TEMPLATES = "./templates"
+STATIC = "./static"
 
 app = Flask(__name__)
 
@@ -43,15 +54,15 @@ def get_random_image_name():
 """
 	deletes an individual ingredient with specified ID
 """
-@app.route("/delete-ingredient/", methods=["POST"])
-def delete_ingredient():
+async def delete_ingredient(request):
 	connection, cursor = create_connection()
 
-	id = request.values.get("id")
+	values = await request.post()
+	id = values.get("id")
 	cursor.execute("""DELETE FROM ingredients WHERE id = ?;""", [id])
 
 	if cursor.rowcount > 0:
-		type_id = request.values.get("typeId")
+		type_id = values.get("typeId")
 		cursor.execute(
 			"""UPDATE ingredient_types SET unit_count = unit_count - 1 WHERE id = ?;""",
 			[type_id]
@@ -59,10 +70,10 @@ def delete_ingredient():
 	
 		connection.commit()
 		connection.close()
-		return '{"success": true}'
+		return web.Response(content_type="text/json", body='{"success": true}')
 	else:
 		connection.close()
-		return '{"success": false}'
+		return web.Response(content_type="text/json", body='{"success": false}')
 
 """
 	'name' and 'max_amount' required
@@ -79,11 +90,12 @@ def delete_ingredient():
 		image: string
 	}
 """
-@app.route("/add-ingredient/", methods=["POST"])
-def add_ingredient():
-	name = request.values.get("name")
-	max_amount = request.values.get("maxAmount")
-	current_amount = request.values.get("currentAmount")
+async def add_ingredient(request):
+	values = await request.post()
+	
+	name = values.get("name")
+	max_amount = values.get("maxAmount")
+	current_amount = values.get("currentAmount")
 
 	if name == None or max_amount == None or not (type(max_amount) == int or float):
 		return "{}" # error out if name/max_amount isn't provided, or ifs max_amount is not a valid number
@@ -99,15 +111,19 @@ def add_ingredient():
 
 	image_id = -1
 	database_name = ""
-	if "picture" in request.files:
-		picture = request.files["picture"]
+	if "picture" in values:
+		# TODO this whole thing really needs to be made secure
+		picture = values["picture"].file
 		image_name = f"{get_random_image_name()}.png"
 		database_name = f"local:{image_name}"
-		filename = f"{LOCAL_IMAGES}/{image_name}" # TODO this really needs to be made secure
+		filename = f"{LOCAL_IMAGES}/{image_name}"
 
 		cursor.execute("""INSERT INTO images (source) VALUES(?);""", [database_name])
 		image_id = cursor.lastrowid
-		picture.save(filename)
+
+		file = open(filename, "wb")
+		file.write(picture.read())
+		file.close()
 	
 	# check if we already have an ingredient type
 	cursor.execute(
@@ -150,18 +166,20 @@ def add_ingredient():
 	connection.commit()
 	connection.close()
 
-	return json.dumps({
-		"amount": current_amount,
-		"id": ingredient_id,
-		"image": database_name,
-		"maxAmount": max_amount,
-		"name": name,
-		"typeId": ingredient_type_id,
-		"units": units,
-	})
+	return web.Response(
+		content_type="text/json",
+		body=json.dumps({
+			"amount": current_amount,
+			"id": ingredient_id,
+			"image": database_name,
+			"maxAmount": max_amount,
+			"name": name,
+			"typeId": ingredient_type_id,
+			"units": units,
+		})
+	)
 
-@app.route("/get-ingredients/")
-def get_ingredients():
+def get_ingredients(request):
 	connection, cursor = create_connection()
 	
 	results = cursor.execute(
@@ -183,15 +201,21 @@ def get_ingredients():
 	
 	connection.close()
 
-	return json.dumps(array)
+	return web.Response(content_type="text/json", body=json.dumps(array))
 
 detection = re.compile(r"^[a-z]+\.png$")
-@app.route("/images/<image>")
-def images(image):
+def images(request):
+	image = request.match_info.get("image", "")
+	
 	if detection.match(image) != None and os.path.isfile(f"{LOCAL_IMAGES}/{image}"):
-		return send_from_directory(LOCAL_IMAGES, image)
+		content = open(os.path.join(LOCAL_IMAGES, image), "rb").read()
+		return web.Response(content_type="image/png", body=content)
 	else:
-		return ""
+		return web.Response(content_type="text/html", body="")
+
+def index(request):
+	content = open(os.path.join(TEMPLATES, "index.html")).read()
+	return web.Response(content_type="text/html", text=content)
 
 if __name__ == '__main__':
 	if not os.path.isdir(LOCAL):
@@ -206,9 +230,16 @@ if __name__ == '__main__':
 	# create tables if we don't have them
 	connection, cursor = create_connection()
 	connection.close()
-	
-	handler = logging.StreamHandler()
-	handler.setLevel(logging.INFO)
-	app.debug = True
-	app.logger.addHandler(handler)
-	app.run(host='0.0.0.0', debug=True)
+
+	# create the webapp
+	app = web.Application()
+	app.add_routes([web.static("/static", STATIC)])
+	app.router.add_get("/", index)
+	app.router.add_get("/images/{image}", images)
+	app.router.add_get("/get-ingredients/", get_ingredients)
+	app.router.add_post("/add-ingredient/", add_ingredient)
+	app.router.add_post("/delete-ingredient/", delete_ingredient)
+
+	ssl_context = ssl.SSLContext()
+	ssl_context.load_cert_chain(f"{LOCAL}/server.cert", f"{LOCAL}/server.key")
+	web.run_app(app, access_log=None, host="0.0.0.0", port=5000, ssl_context=ssl_context)

@@ -28,7 +28,7 @@ class Header extends React.Component<OwnProps> {
 		} = this.props
 		
 		return <div className="header">
-			<img src="./data/bansheechef.png" />
+			<img src="/static/bansheechef.png" />
 			{
 				draggable.dataType ? <>
 					<button className="button dropzone shopping-list">Shopping List</button>

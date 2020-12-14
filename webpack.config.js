@@ -8,15 +8,15 @@ module.exports = {
 	entry: "./src/client/ts/main.tsx",
 	devtool: "inline-source-map",
 	plugins: [
-		new HtmlWebpackPlugin({
+		/*new HtmlWebpackPlugin({
 			template: "./src/client/index.html",
-		}),
+		}),*/
 		new CopyWebpackPlugin({
 			patterns: [{
 				from: "./src/client/data/",
-				to: "./data/"
+				to: "./static"
 			}]
-		})
+		}),
 	],
 	resolve: {
 		extensions: [".ts", ".tsx", ".js", ".json", ".css"],
@@ -43,7 +43,7 @@ module.exports = {
     ],
   },
 	output: {
-		path: path.resolve(__dirname, "./dist/client"),
-		filename: "./js/bundle.min.js",
+		path: path.resolve(__dirname, "./dist/server/"),
+		filename: "./static/js/bundle.min.js",
 	},
 };
