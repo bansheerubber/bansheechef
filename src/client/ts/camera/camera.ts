@@ -13,10 +13,10 @@ export class Camera {
 				navigator.mediaDevices.getUserMedia({
 					video: {
 						width: {
-							ideal: 640,
+							ideal: 1280,
 						},
 						height: {
-							ideal: 480,
+							ideal: 720,
 						},
 					} 
 				}).then((stream) => {

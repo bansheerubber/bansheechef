@@ -88,6 +88,7 @@ class VideoTransformTrack(MediaStreamTrack):
 	
 	async def recv(self):
 		original_frame = await self.track.recv()
+		original_frame = await self.track.recv()
 		original_frame = await self.track.recv() # skip a frame for speed
 
 		# skip frames if we start falling behind
@@ -99,6 +100,7 @@ class VideoTransformTrack(MediaStreamTrack):
 			frame = original_frame.to_ndarray(format="bgr24")
 		
 			detected, im1 = simple_detection(frame, [])
+			# detected, im1 = complex_detection(frame, detected1)
 
 			if self.session.data_channel and len(detected) > 0:
 				self.session.data_channel.send(json.dumps({
