@@ -1,10 +1,18 @@
 import { pluralize } from "./pluralize"
 
 export type Cups = number
-export type ValidUnits = "cups" | "tablespoons" | "teaspoons"
+export type ValidUnits = "gallons" | "quarts" | "cups" | "tablespoons" | "teaspoons"
 
 export const convertToCups = (value: number, units: ValidUnits) => {
 	switch(units) {
+		case "gallons": {
+			return value * 16
+		}
+
+		case "quarts": {
+			return value * 4
+		}
+		
 		case "cups": {
 			return value
 		}
@@ -32,6 +40,20 @@ export const convertToCups = (value: number, units: ValidUnits) => {
 */
 export const convertToReasonableMeasurement = (value: number) => {
 	const cutoffs = [
+		{
+			lowest: 8, // in cups
+			leeway: 1 / 8, // 1/8 of a cup
+			multiplier: 1 / 16,
+			name: "gallon",
+			roundables: [[16, ""], [8, "1/2"], [0, ""]]
+		},
+		{
+			lowest: 4, // in cups
+			leeway: 1 / 8, // 1/8 of a cup
+			multiplier: 1 / 4,
+			name: "quart",
+			roundables: [[4, ""], [2, "1/2"], [0, ""]]
+		},
 		{
 			lowest: 1 / 4, // in cups
 			leeway: 1 / 96, // 1/2 teaspoon
@@ -68,10 +90,11 @@ export const convertToReasonableMeasurement = (value: number) => {
 		return "0 cups"
 	}
 
-	const decimal = 1 - (Math.ceil(value) - value) // only the decimals
+	const decimal = value % (1 / chosenCutoff.multiplier) // figure out how much we are over 1 unit of measurement (gallon, quart, cup, etc)
 	let lowestDelta = Number.MAX_SAFE_INTEGER
 	let roundedDecimalUI: string
 	let roundedDecimal: number
+	// loop through each roundable and figure out how much we got
 	for(const roundable of chosenCutoff.roundables) {
 		const test = decimal - (roundable[0] - chosenCutoff.leeway)
 		if(test < lowestDelta && test >= 0) { // only choose a roundable we're above or equal to
