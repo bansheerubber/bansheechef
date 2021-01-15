@@ -5,6 +5,8 @@ import numpy as np
 from pyzbar import pyzbar
 from pyzbar.pyzbar import ZBarSymbol
 
+from av import VideoFrame
+
 from aiohttp import web
 from aiortc import MediaStreamTrack, RTCPeerConnection, RTCSessionDescription
 
@@ -72,7 +74,7 @@ def complex_detection(frame, already_detected):
 	if len(found) != 0:
 		print("found by complex")
 
-	return (found, im)
+	return (found, cv2.cvtColor(im, cv2.COLOR_GRAY2BGR))
 
 def dump(obj):
   for attr in dir(obj):
@@ -99,13 +101,18 @@ class VideoTransformTrack(MediaStreamTrack):
 		if self.session.barcode_scanning:
 			frame = original_frame.to_ndarray(format="bgr24")
 		
-			detected, im1 = simple_detection(frame, [])
-			# detected, im1 = complex_detection(frame, detected1)
+			detected1, im1 = simple_detection(frame, [])
+			detected, im = complex_detection(frame, detected1)
 
 			if self.session.data_channel and len(detected) > 0:
 				self.session.data_channel.send(json.dumps({
 					"found": detected,
 				}))
+			
+			new_frame = VideoFrame.from_ndarray(im, format="bgr24")
+			new_frame.pts = original_frame.pts
+			new_frame.time_base = original_frame.time_base
+			return new_frame
 
 		return original_frame
 

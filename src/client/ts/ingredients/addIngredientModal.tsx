@@ -273,6 +273,7 @@ class AddIngredientModal extends React.Component<OwnProps, AddIngredientModalSta
 				<button
 					className="button gray"
 					onClick={() => {
+						Camera.dataChannel.send("start")
 						this.setState({
 							amount: undefined,
 							barcodeMode: true,

@@ -74,6 +74,10 @@ export class Camera {
 				this.connection.addEventListener("icegatheringstatechange", checkState)
 			}
 		})
+
+		this.connection.addEventListener("track", (event) => {
+			this._stream = event.streams[0]
+		})
 	
 		// send our offer to the server
 		const remoteOffer = await requestBackend(destination, "POST", {
