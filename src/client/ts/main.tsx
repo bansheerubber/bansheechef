@@ -8,34 +8,47 @@ import { Provider } from "react-redux"
 import IngredientDraggable from "./ingredients/ingredientDraggable"
 import IngredientsSettings from "./ingredients/ingredientSettings"
 import Header from "./header/header"
-import Database from "./database/database"
-import { setIngredients } from "./ingredients/ingredientActions"
+import { setIngredients, setSelectedIngredient } from "./ingredients/ingredientActions"
 import AddIngredientModal from "./ingredients/addIngredientModal"
 import CameraModel from "./camera/cameraModal"
 import { convertToReasonableMeasurement } from "./helpers/convertUnits"
-import { translateIngredientType } from "./ingredients/ingredientData"
+import { translateIngredient } from "./ingredients/ingredientData"
+import IngredientAPI from "./ingredients/ingredientAPI"
 
 const store = createStore(reducer)
 window["store"] = store;
 
 (async function egg() {
-	const ingredients = (await Database.getIngredients()).map(translateIngredientType)
-	store.dispatch(setIngredients(ingredients))
+	store.dispatch(setIngredients(await IngredientAPI.getIngredients()))
 })()
 
 ReactDOM.render(
-	<Provider store={store}>
-		<IngredientsSettings />
+	<div onMouseDown={event => {
+		let found = false
+		let parent = event.target as HTMLElement
+		while(parent) {
+			if(parent.className === "ingredient-container") {
+				found = true
+				break
+			}
+			parent = parent.parentElement
+		}
 
-		<Header />
+		if(found === false) {
+			store.dispatch(setSelectedIngredient(null))
+		}
+	}}>
+		<Provider store={store}>
+			<Header />
 
-		<AddIngredientModal />
+			<AddIngredientModal />
 
-		<CameraModel />
+			<CameraModel />
 
-		<IngredientSelection>
-			<IngredientDraggable />
-		</IngredientSelection>
-	</Provider>,
+			<IngredientSelection>
+				<IngredientDraggable />
+			</IngredientSelection>
+		</Provider>
+	</div>,
 	document.getElementById("react")
 )

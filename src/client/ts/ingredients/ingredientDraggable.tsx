@@ -2,12 +2,12 @@ import * as React from "react"
 import { connect } from "react-redux"
 import { State } from "../reducer"
 import Ingredient, { IngredientProps } from "./ingredient"
-import { IngredientTypeData } from "./ingredientData"
+import { IngredientData } from "./ingredientData"
 
 interface IngredientDraggableReduxState {
 	x: number
 	y: number
-	dataType: IngredientTypeData
+	data: IngredientData
 }
 
 type OwnProps = IngredientDraggableReduxState
@@ -19,16 +19,16 @@ class IngredientDraggable extends React.Component<OwnProps> {
 	
 	render(): JSX.Element {
 		const {
-			dataType,
+			data,
 			x,
 			y,
 		} = this.props
 		
 		return <Ingredient
-			dataType={dataType}
+			data={data}
 			canDrag={false}
 			style={{
-				display: dataType ? "block" : "none",
+				display: data ? "block" : "none",
 				cursor: "grabbing",
 				position: "absolute",
 				left: x,
@@ -44,7 +44,7 @@ class IngredientDraggable extends React.Component<OwnProps> {
 const mapStateToProps = (state: State): IngredientDraggableReduxState => ({
 	x: state.ingredients.draggable.x,
 	y: state.ingredients.draggable.y,
-	dataType: state.ingredients.draggable.dataType,
+	data: state.ingredients.draggable.data,
 })
 
 export default connect(

@@ -53,29 +53,6 @@ def simple_detection(frame, already_detected):
 
 	return (found, im)
 
-
-def complex_detection(frame, already_detected):
-	im = frame.copy()
-
-	gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-	im = cv2.morphologyEx(gray, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_RECT, (1, 21)))
-
-	dens = np.sum(gray, axis=0)
-	mean = np.mean(dens)
-	for idx, val in enumerate(dens):
-		if val < 10800:
-			im[:, idx] = 0
-
-	(_, im) = cv2.threshold(im, 128, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-
-	barcodes = pyzbar.decode(im)
-	found = visualize_barcode(frame, barcodes, already_detected)
-
-	if len(found) != 0:
-		print("found by complex")
-
-	return (found, cv2.cvtColor(im, cv2.COLOR_GRAY2BGR))
-
 def dump(obj):
   for attr in dir(obj):
     print("obj.%s = %r" % (attr, getattr(obj, attr)))
@@ -101,18 +78,14 @@ class VideoTransformTrack(MediaStreamTrack):
 		if self.session.barcode_scanning:
 			frame = original_frame.to_ndarray(format="bgr24")
 		
-			detected1, im1 = simple_detection(frame, [])
-			detected, im = complex_detection(frame, detected1)
+			detected, im = simple_detection(frame, [])
 
 			if self.session.data_channel and len(detected) > 0:
 				self.session.data_channel.send(json.dumps({
 					"found": detected,
 				}))
-			
-			new_frame = VideoFrame.from_ndarray(im, format="bgr24")
-			new_frame.pts = original_frame.pts
-			new_frame.time_base = original_frame.time_base
-			return new_frame
+		
+			return original_frame
 
 		return original_frame
 

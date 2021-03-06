@@ -8,7 +8,7 @@ import imutils
 import time
 import cv2
 
-vs = VideoStream().start()
+vs = VideoStream("/dev/video0", resolution=(1280, 720)).start()
 found = set()
 
 def visualize_barcode(im, barcodes, already_detected):
@@ -49,46 +49,53 @@ def simple_detection(frame, already_detected):
 	im = frame.copy()
 	im = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
 
-	barcodes = pyzbar.decode(im)
-	found = visualize_barcode(im, barcodes, already_detected)
-	return (found, im)
+	gradX = cv2.Sobel(im, ddepth=cv2.CV_32F, dx=1, dy=0, ksize=-1)
+	gradY = cv2.Sobel(im, ddepth=cv2.CV_32F, dx=0, dy=1, ksize=-1)
+	# subtract the y-gradient from the x-gradient
+	gradient = cv2.subtract(gradX, gradY)
+	gradient = cv2.convertScaleAbs(gradient)
+	
+	blurred = cv2.blur(gradient, (2, 2))
+	(_, thresh) = cv2.threshold(blurred, 225, 255, cv2.THRESH_BINARY)
+	kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (21, 21))
+	closed = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
+	closed = cv2.erode(closed, None, iterations = 8)
 
+	# cnts = cv2.findContours(closed.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+	# cnts = imutils.grab_contours(cnts)
+	# c = sorted(cnts, key = cv2.contourArea, reverse = True)[0]
 
-def complex_detection(frame, already_detected):
-	im = frame.copy()
+	# rect = cv2.minAreaRect(c)
+	# print(rect)
+	# box = cv2.boxPoints(rect)
+	# box = np.int0(box)
 
-	gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-	im = cv2.morphologyEx(gray, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_RECT, (1, 21)))
+	# cv2.drawContours(closed, [box], -1, (0, 255, 0), 3)
 
-	dens = np.sum(gray, axis=0)
-	mean = np.mean(dens)
-	for idx, val in enumerate(dens):
-		if val < 10800:
-			im[:, idx] = 0
+	# barcodes = pyzbar.decode(im)
+	# found = visualize_barcode(im, barcodes, already_detected)
 
-	(_, im) = cv2.threshold(im, 128, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-
-	barcodes = pyzbar.decode(im)
-	found = visualize_barcode(im, barcodes, already_detected)
-
-	if len(found) != 0:
-		print("found by complex")
-
-	return (found, im)
-
+	return ([], closed)
 
 # loop over the frames from the video stream
+image_type = True
 while True:
 	frame = vs.read()
 
 	detected1, im1 = simple_detection(frame, [])
-	detected2, im2 = complex_detection(frame, detected1)
 
-	cv2.imshow("Barcode Scanner", frame)
+	if image_type:
+		cv2.imshow("Barcode Scanner", frame)
+	else:
+		cv2.imshow("Barcode Scanner", im1)
+
 	key = cv2.waitKey(1) & 0xFF
 
 	if key == ord("q"):
 		break
+	
+	if key == ord("a"):
+		image_type = not image_type
 
 cv2.destroyAllWindows()
 vs.stop()

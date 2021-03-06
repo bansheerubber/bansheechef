@@ -3,7 +3,7 @@ import { connect } from "react-redux"
 import Database from "../database/database"
 import { State } from "../reducer"
 import Ingredient from "./ingredient"
-import { IngredientTypeData } from "./ingredientData"
+import { IngredientData } from "./ingredientData"
 import IngredientsSettings from "./ingredientSettings"
 
 interface IngredientSelectionProps {
@@ -11,8 +11,7 @@ interface IngredientSelectionProps {
 }
 
 interface IngredientSelectionReduxState {
-	ingredients: IngredientTypeData[]
-	selectedIngredient: IngredientTypeData
+	ingredients: IngredientData[]
 }
 
 type OwnProps = IngredientSelectionProps & IngredientSelectionReduxState
@@ -30,24 +29,19 @@ class IngredientSelection extends React.Component<OwnProps> {
 		const {
 			children,
 			ingredients,
-			selectedIngredient
 		} = this.props
+
+		console.log(ingredients)
 		
-		return <div
-			className="ingredients-container"
-			style={{
-				margin: selectedIngredient ? 0 : undefined,
-			}}
-		>
+		return <div className="ingredients-container">
 			<h1>Your Stock:</h1>
-			<div id="ingredients" className="ingredients">{children}{ingredients.map(data => <Ingredient dataType={data} />)}</div>
+			<div id="ingredients" className="ingredients">{children}{ingredients.map(data => <Ingredient data={data} />)}</div>
 		</div>
 	}
 }
 
 const mapStateToProps = (state: State) => ({
 	ingredients: state.ingredients.ingredients,
-	selectedIngredient: state.ingredients.selectedIngredient,
 })
 
 export default connect(

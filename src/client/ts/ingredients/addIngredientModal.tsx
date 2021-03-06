@@ -7,7 +7,7 @@ import requestBackend from "../helpers/requestBackend"
 import Modal from "../modal/modal"
 import { State } from "../reducer"
 import AmountInput from "./amountInput"
-import { setAddIngredientShown } from "./ingredientActions"
+import { addIngredient, setAddIngredientShown } from "./ingredientActions"
 import { IngredientData, IngredientTypeData, translateIngredient, translateIngredientType } from "./ingredientData"
 import Ingredient from "./ingredient"
 import { Camera } from "../camera/camera"
@@ -22,6 +22,7 @@ interface AddIngredientReduxState {
 interface AddIngredientReduxDispatch {
 	close: () => void
 	showCamera: () => void
+	addIngredient: (ingredient: IngredientData) => void
 }
 
 type OwnProps = AddIngredientReduxState & AddIngredientReduxDispatch
@@ -95,10 +96,12 @@ class AddIngredientModal extends React.Component<OwnProps, AddIngredientModalSta
 				picture: pictureBlob,
 			},
 		).then((data: any) => {
-			this.state.addedIngredients.unshift(translateIngredient(data))
+			const ingredient = translateIngredient(data)
+			this.state.addedIngredients.unshift(ingredient)
 			this.setState({
 				addedIngredients: [...this.state.addedIngredients],
 			})
+			this.props.addIngredient(ingredient)
 		})
 	}
 
@@ -116,9 +119,12 @@ class AddIngredientModal extends React.Component<OwnProps, AddIngredientModalSta
 
 					// if we're in barcode mode, query website for ingreident and add it
 					if(this.state.barcodeMode) {
+						console.log("trying to look up", barcode)
 						requestBackend("/get-barcode/", "POST", {
 							barcode,
 						}).then((result: IngredientTypeData) => {
+							console.log(result, "got barcode")
+							
 							if(result.name) {
 								Camera.dataChannel.send("stop") // stop barcode recognition for saving resources
 								
@@ -324,7 +330,6 @@ class AddIngredientModal extends React.Component<OwnProps, AddIngredientModalSta
 							canDrag={false}
 							onDelete={() => this.deleteIngredient(data)}
 							data={data}
-							dataType={data.type}
 						/>
 					)}
 				</div>
@@ -343,6 +348,7 @@ const mapStateToProps = (state: State) => ({
 const mapDispatchToProps = (dispatch) => ({
 	close: () => dispatch(setAddIngredientShown(false)),
 	showCamera: () => dispatch(setCameraModalShown(true)),
+	addIngredient: ingredient => dispatch(addIngredient(ingredient))
 })
 
 export default connect(

@@ -5,7 +5,6 @@ export interface IngredientTypeData {
 	image: string
 	name: string
 	maxAmount: number
-	units: number
 }
 
 export interface IngredientData {
@@ -19,19 +18,16 @@ export const translateIngredientType = ({
 	maxAmount,
 	name,
 	typeId,
-	units,
 }: {
 	image: string,
 	maxAmount: number,
 	name: string,
 	typeId: number,
-	units: number,
 }): IngredientTypeData => ({
 	image: resolveUrl(image),
 	maxAmount,
 	name,
 	id: typeId,
-	units,
 })
 
 export const translateIngredient = ({
@@ -41,7 +37,6 @@ export const translateIngredient = ({
 	maxAmount,
 	name,
 	typeId,
-	units,
 }: {
 	amount: number,
 	id: number,
@@ -49,7 +44,6 @@ export const translateIngredient = ({
 	maxAmount: number,
 	name: string,
 	typeId: number,
-	units: number,
 }): IngredientData => ({
 	amount,
 	id,
@@ -58,6 +52,5 @@ export const translateIngredient = ({
 		maxAmount,
 		name,
 		id: typeId,
-		units,
 	},
 })

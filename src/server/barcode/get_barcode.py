@@ -10,7 +10,7 @@ async def get_barcode(request):
 
 	if barcode:
 		result = cursor.execute(
-			"""SELECT name, max_amount, unit_count, source, i.id
+			"""SELECT name, max_amount, source, i.id
 				FROM ingredient_types i
 				LEFT JOIN images im ON i.image_id = im.id
 				WHERE barcode = ?;""",
@@ -21,11 +21,10 @@ async def get_barcode(request):
 			return web.Response(
 				content_type="application/json",
 				text=json.dumps({
-					"image": result[3],
+					"image": result[2],
 					"maxAmount": result[1],
 					"name": result[0],
-					"typeId": result[4],
-					"units": result[2],
+					"typeId": result[3],
 				}),
 			)
 	

@@ -1,14 +1,13 @@
 import * as React from "react"
 import { connect } from "react-redux"
 import { convertToReasonableMeasurement } from "../helpers/convertUnits"
-import { pluralize } from "../helpers/pluralize"
+import { State } from "../reducer"
 import { CONSTANTS } from "./constants"
 import { setDraggable, setSelectedIngredient } from "./ingredientActions"
 import { IngredientData, IngredientTypeData } from "./ingredientData"
 
 export interface IngredientProps {
-	dataType?: IngredientTypeData
-	data?: IngredientData
+	data: IngredientData
 	/**
 	 * defaults to false
 	 */
@@ -24,8 +23,12 @@ export interface IngredientProps {
 	style?: React.CSSProperties
 }
 
+interface IngredientReduxState {
+	selectedIngredient: IngredientData
+}
+
 interface IngredientReduxDispatch {
-	setSelectedIngredient: (ingredient: Ingredient) => void
+	setSelectedIngredient: (ingredient: IngredientData) => void
 	setDraggable: (draggable: {
 		x?: number,
 		y?: number,
@@ -33,26 +36,30 @@ interface IngredientReduxDispatch {
 	}) => void
 }
 
-type OwnProps = IngredientProps & IngredientReduxDispatch
+type OwnProps = IngredientProps & IngredientReduxState & IngredientReduxDispatch
 
 interface IngredientState {
 	isDragging: boolean
+	isSelected: boolean
 }
 
 class Ingredient extends React.Component<OwnProps, IngredientState> {
 	private lastClickTime: number
+	private ingredientContainer: { current: HTMLDivElement }
 	
 	constructor(props: OwnProps) {
 		super(props)
 		this.state = {
 			isDragging: false,
+			isSelected: false,
 		}
+
+		this.ingredientContainer = React.createRef()
 	}
 	
 	onClick(event) {
 		const {
 			data,
-			dataType,
 			setSelectedIngredient,
 			setDraggable,
 		} = this.props
@@ -62,7 +69,7 @@ class Ingredient extends React.Component<OwnProps, IngredientState> {
 		}
 		
 		if(performance.now() - this.lastClickTime < CONSTANTS.DOUBLE_CLICK_TIME) {			
-			setDraggable({
+			/*setDraggable({
 				dataType,
 				x: event.pageX,
 				y: event.pageY,
@@ -92,10 +99,10 @@ class Ingredient extends React.Component<OwnProps, IngredientState> {
 	
 			this.setState({
 				isDragging: true,
-			})
+			})*/
 		}
 		else {
-			setSelectedIngredient(this)
+			setSelectedIngredient(this.props.data)
 		}
 		this.lastClickTime = performance.now()
 	}
@@ -104,41 +111,80 @@ class Ingredient extends React.Component<OwnProps, IngredientState> {
 		const {
 			canDelete,
 			onDelete,
+			selectedIngredient,
 		} = this.props
 		
-		return <div
-			className={`ingredient ${this.state.isDragging ? "dragging" : ""}`}
-			onMouseDown={event => this.onClick(event)}
-			style={this.props.style}
-		>
-			{
-				canDelete ? <div
-					className="delete-button"
-					onClick={onDelete}
-				>
-					&#10005;
-				</div>
-				: null
-			}
+		return <div className="ingredient-container">
 			<div
-				className="icon"
-				style={{
-					backgroundImage: `url(${this.props.dataType?.image ? this.props.dataType?.image : CONSTANTS.NO_IMAGE})`
-				}}
-			/>
-			<div className="info">
-				<b>{this.props.dataType?.name}</b>
-				<div>{this.props.dataType?.units} {pluralize(this.props.dataType?.units, "item")}, {convertToReasonableMeasurement(this.props.dataType?.maxAmount || 0)} remaining</div>
+				className={`ingredient ${this.state.isDragging ? "dragging" : ""}`}
+				onMouseDown={event => this.onClick(event)}
+				style={this.props.style}
+				ref={this.ingredientContainer}
+			>
+				{
+					canDelete ? <div
+						className="delete-button"
+						onClick={onDelete}
+					>
+						&#10005;
+					</div>
+					: null
+				}
+				<div
+					className="icon"
+					style={{
+						backgroundImage: `url(${this.props.data?.type.image ? this.props.data?.type.image : CONSTANTS.NO_IMAGE})`
+					}}
+				/>
+				<div className="info">
+					<b>{this.props.data?.type.name}</b>
+					<div>{convertToReasonableMeasurement(this.props.data?.amount || 0)} remaining</div>
+				</div>
+			</div>
+
+			<div className="ingredient edit" style={{
+				display: this.props.data && this.props.data === selectedIngredient ? "block" : "none",
+				position: "absolute",
+				zIndex: 100,
+				top: this.ingredientContainer.current
+					? (this.ingredientContainer.current?.offsetTop - (350 - this.ingredientContainer.current.clientHeight) / 2)
+					: 0,
+				left: this.ingredientContainer.current
+					? (this.ingredientContainer.current?.offsetLeft - (270 - this.ingredientContainer.current.clientWidth) / 2)
+					: 0,
+			}}>
+				<div className="info">
+				<b>{this.props.data?.type.name}</b>
+					<div className="settings">
+						<div>
+							<input type="range" />
+							<div className="amount-input">
+								<input type="text" />
+								<select>
+									<option>cups</option>
+									<option>tablespoons</option>
+									<option>teaspoons</option>
+								</select>
+							</div>
+							<button className="button small blue" style={{ width: "100%", }}>Add Another</button>
+							<button className="button small green" style={{ width: "100%", }}>Add to Shopping List</button>
+						</div>
+						<button className="button small red remove" style={{ width: "100%", }}>Remove</button>
+					</div>
+				</div>
 			</div>
 		</div>
 	}
 }
 
-const mapDispatchToProps = (dispatch): IngredientReduxDispatch => ({
-	setSelectedIngredient: (ingredient: Ingredient) => {
-		dispatch(setSelectedIngredient(ingredient.props.dataType))
-	},
+const mapStateToProps = (state: State) => ({
+	selectedIngredient: state.ingredients.selectedIngredient,
+})
 
+const mapDispatchToProps = (dispatch): IngredientReduxDispatch => ({
+	setSelectedIngredient: (ingredient: IngredientData) => {
+		dispatch(setSelectedIngredient(ingredient))
+	},
 	setDraggable: (draggable: {
 		x?: number,
 		y?: number,
@@ -149,6 +195,6 @@ const mapDispatchToProps = (dispatch): IngredientReduxDispatch => ({
 })
 
 export default connect(
-	null,
+	mapStateToProps,
 	mapDispatchToProps,
 )(Ingredient)

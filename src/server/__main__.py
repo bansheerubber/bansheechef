@@ -137,25 +137,18 @@ async def add_ingredient(request):
 		[ingredient_type_id]
 	)
 
-	result = cursor.execute(
-		"""SELECT unit_count FROM ingredient_types WHERE id = ?;""",
-		[ingredient_type_id]
-	)
-	units = result.fetchone()[0]
-
 	connection.commit()
 	connection.close()
 
 	return web.Response(
 		content_type="text/json",
-		body=json.dumps({
+		body=json.dumps({ # IngredientData object
 			"amount": current_amount,
 			"id": ingredient_id,
 			"image": image,
 			"maxAmount": max_amount,
 			"name": name,
 			"typeId": ingredient_type_id,
-			"units": units,
 		})
 	)
 
@@ -163,20 +156,20 @@ def get_ingredients(request):
 	connection, cursor = create_connection()
 	
 	results = cursor.execute(
-		"""SELECT name, max_amount, unit_count, source, SUM(current_amount), i.id
+		"""SELECT name, max_amount, source, current_amount, i.id, ing.id
 			 FROM ingredient_types i
 			 LEFT JOIN images im ON i.image_id = im.id
-			 JOIN ingredients ing ON i.id = ing.ingredient_type_id
-			 GROUP BY i.id;"""
+			 JOIN ingredients ing ON i.id = ing.ingredient_type_id;"""
 	).fetchall()
 	array = []
 	for result in results:
-		array.append({
-			"image": result[3],
+		array.append({ # IngredientData object
+			"amount": result[3],
+			"id": result[5],
+			"image": result[2],
 			"maxAmount": result[1],
 			"name": result[0],
-			"typeId": result[5],
-			"units": result[2],
+			"typeId": result[4],
 		})
 	
 	connection.close()

@@ -1,7 +1,7 @@
 import * as React from "react"
 import { connect } from "react-redux"
 import { setAddIngredientShown } from "../ingredients/ingredientActions"
-import { IngredientTypeData } from "../ingredients/ingredientData"
+import { IngredientData } from "../ingredients/ingredientData"
 import { State } from "../reducer"
 
 interface HeaderReduxState {
@@ -9,7 +9,7 @@ interface HeaderReduxState {
 	draggable: {
 		x: number,
 		y: number,
-		dataType: IngredientTypeData,
+		data: IngredientData,
 	}
 }
 
@@ -30,7 +30,7 @@ class Header extends React.Component<OwnProps> {
 		return <div className="header">
 			<img src="/static/bansheechef.png" />
 			{
-				draggable.dataType ? <>
+				draggable.data ? <>
 					<button className="button dropzone shopping-list">Shopping List</button>
 					<button className="button dropzone trash">Trash</button>
 				</>

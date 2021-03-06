@@ -3,10 +3,10 @@ import { connect } from "react-redux"
 import { pluralize } from "../helpers/pluralize"
 import { State } from "../reducer"
 import { CONSTANTS } from "./constants"
-import { IngredientTypeData } from "./ingredientData"
+import { IngredientData } from "./ingredientData"
 
 interface IngredientsSettingsReduxState {
-	selectedIngredient: IngredientTypeData
+	selectedIngredient: IngredientData
 }
 
 type OwnProps = IngredientsSettingsReduxState
@@ -25,9 +25,9 @@ class IngredientsSettings extends React.Component<OwnProps> {
 			className="ingredient-settings"
 		>
 			<div className="preview">
-				<h1>{selectedIngredient.name}</h1>
-				<img src={selectedIngredient.image ? selectedIngredient.image : CONSTANTS.NO_IMAGE} />
-				<h3>{selectedIngredient.units} {pluralize(selectedIngredient.units, "item")}</h3>
+				<h1>{selectedIngredient.type.name}</h1>
+				<img src={selectedIngredient.type.image ? selectedIngredient.type.image : CONSTANTS.NO_IMAGE} />
+				<h3>temp</h3>
 			</div>
 			<div>
 				{/* options */}

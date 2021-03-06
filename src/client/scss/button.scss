@@ -17,12 +17,30 @@
 }
 
 .button.blue {
-	background-color: hsl(207, 100, 55);
-	color: #FFF;
+	background-color: hsl(195, 100%, 75%);
+	color: #505050;
 }
 
 .button.blue:active {
-	background-color: hsl(207, 100, 45);
+	background-color: hsl(195, 62%, 65%);
+}
+
+.button.green {
+	background-color: hsl(126, 72%, 68%);
+	color: #505050;
+}
+
+.button.green:active {
+	background-color: hsl(126, 45%, 57%);
+}
+
+.button.red {
+	background-color: #FF8080;
+	color: #505050;
+}
+
+.button.red:active {
+	background-color: #d36666;
 }
 
 .button.gray {

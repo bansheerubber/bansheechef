@@ -102,7 +102,7 @@ $settings-size: 25vw;
 	font-size: 16pt;
 	line-height: 23pt;
 	text-align: center;
-} 
+}
 
 .add-ingredient {
 	display: flex;
@@ -154,4 +154,42 @@ $settings-size: 25vw;
 
 .add-ingredient .dialog * {
 	width: 100%;
+}
+
+.ingredient.edit {
+	margin: 0;
+	box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+}
+
+.ingredient.edit .info {
+	width: 270px;
+	height: 350px;
+	border-radius: 10px;
+	display: flex;
+	flex-direction: column;
+	padding: 0.75em;
+}
+
+.ingredient.edit .info>b {
+	margin-bottom: 0.5em;
+}
+
+.ingredient.edit .settings {
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	height: 100%;
+}
+
+.ingredient.edit .settings>div {
+	display: flex;
+	flex-direction: column;
+}
+
+.ingredient.edit .settings>div>* {
+	margin: 0.2em 0em;
+}
+
+.ingredient.edit .remove {
+	align-self: flex-end;
 }

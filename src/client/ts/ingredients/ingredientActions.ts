@@ -1,6 +1,6 @@
-import { IngredientTypeData } from "./ingredientData";
+import { IngredientData, IngredientTypeData } from "./ingredientData";
 
-export const setSelectedIngredient = (ingredient: IngredientTypeData) => ({
+export const setSelectedIngredient = (ingredient: IngredientData) => ({
   type: setSelectedIngredient,
   ingredient,
 })
@@ -14,9 +14,14 @@ export const setDraggable = (draggable: {
   draggable,
 })
 
-export const setIngredients = (ingredients: IngredientTypeData[]) => ({
+export const setIngredients = (ingredients: IngredientData[]) => ({
   type: setIngredients,
   ingredients,
+})
+
+export const addIngredient = (ingredient: IngredientData) => ({
+  type: addIngredient,
+  ingredient,
 })
 
 export const setAddIngredientShown = (shown: boolean) => ({
