@@ -22,33 +22,33 @@ window["store"] = store;
 	store.dispatch(setIngredients(await IngredientAPI.getIngredients()))
 })()
 
+document.body.addEventListener("mousedown", event => {
+	let found = false
+	let parent = event.target as HTMLElement
+	while(parent) {
+		if(parent.className === "ingredient-container") {
+			found = true
+			break
+		}
+		parent = parent.parentElement
+	}
+
+	if(found === false) {
+		store.dispatch(setSelectedIngredient(null))
+	}
+})
+
 ReactDOM.render(
-	<div onMouseDown={event => {
-		let found = false
-		let parent = event.target as HTMLElement
-		while(parent) {
-			if(parent.className === "ingredient-container") {
-				found = true
-				break
-			}
-			parent = parent.parentElement
-		}
+	<Provider store={store}>
+		<Header />
 
-		if(found === false) {
-			store.dispatch(setSelectedIngredient(null))
-		}
-	}}>
-		<Provider store={store}>
-			<Header />
+		<AddIngredientModal />
 
-			<AddIngredientModal />
+		<CameraModel />
 
-			<CameraModel />
-
-			<IngredientSelection>
-				<IngredientDraggable />
-			</IngredientSelection>
-		</Provider>
-	</div>,
+		<IngredientSelection>
+			<IngredientDraggable />
+		</IngredientSelection>
+	</Provider>,
 	document.getElementById("react")
 )

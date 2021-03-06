@@ -1,6 +1,7 @@
 import { resolveUrl } from "../helpers/resolveUrl";
 
 export interface IngredientTypeData {
+	barcode: string
 	id: number
 	image: string
 	name: string
@@ -14,16 +15,19 @@ export interface IngredientData {
 }
 
 export const translateIngredientType = ({
+	barcode,
 	image,
 	maxAmount,
 	name,
 	typeId,
 }: {
+	barcode: string,
 	image: string,
 	maxAmount: number,
 	name: string,
 	typeId: number,
 }): IngredientTypeData => ({
+	barcode,
 	image: resolveUrl(image),
 	maxAmount,
 	name,
@@ -32,6 +36,7 @@ export const translateIngredientType = ({
 
 export const translateIngredient = ({
 	amount,
+	barcode,
 	id,
 	image,
 	maxAmount,
@@ -39,6 +44,7 @@ export const translateIngredient = ({
 	typeId,
 }: {
 	amount: number,
+	barcode: string,
 	id: number,
 	image: string,
 	maxAmount: number,
@@ -48,6 +54,7 @@ export const translateIngredient = ({
 	amount,
 	id,
 	type: {
+		barcode,
 		image: resolveUrl(image),
 		maxAmount,
 		name,

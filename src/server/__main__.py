@@ -72,8 +72,8 @@ async def add_ingredient(request):
 	current_amount = values.get("currentAmount")
 	barcode = values.get("barcode")
 
-	if name == None or max_amount == None or not (type(max_amount) == int or float) or barcode == None:
-		return "{}" # error out if name/max_amount isn't provided, or ifs max_amount is not a valid number
+	if name == None or max_amount == None or not (type(max_amount) == int or float):
+		return "{}" # error out if name/max_amount isn't provided, or if max_amount is not a valid number
 	
 	name = name.strip()
 
@@ -87,9 +87,9 @@ async def add_ingredient(request):
 	# check if we already have an ingredient type
 	cursor.execute(
 		"""SELECT i.id, im.id, im.source
-			 FROM ingredient_types i
-			 LEFT JOIN images im ON im.id = i.image_id
-			 WHERE name = ? AND max_amount = ?;""",
+		FROM ingredient_types i
+		LEFT JOIN images im ON im.id = i.image_id
+		WHERE name = ? AND max_amount = ?;""",
 		[name, max_amount]
 	)
 	result = cursor.fetchall()
@@ -144,6 +144,7 @@ async def add_ingredient(request):
 		content_type="text/json",
 		body=json.dumps({ # IngredientData object
 			"amount": current_amount,
+			"barcode": barcode,
 			"id": ingredient_id,
 			"image": image,
 			"maxAmount": max_amount,
@@ -156,15 +157,16 @@ def get_ingredients(request):
 	connection, cursor = create_connection()
 	
 	results = cursor.execute(
-		"""SELECT name, max_amount, source, current_amount, i.id, ing.id
-			 FROM ingredient_types i
-			 LEFT JOIN images im ON i.image_id = im.id
-			 JOIN ingredients ing ON i.id = ing.ingredient_type_id;"""
+		"""SELECT name, max_amount, source, current_amount, i.id, ing.id, barcode
+		FROM ingredient_types i
+		LEFT JOIN images im ON i.image_id = im.id
+		JOIN ingredients ing ON i.id = ing.ingredient_type_id;"""
 	).fetchall()
 	array = []
 	for result in results:
 		array.append({ # IngredientData object
 			"amount": result[3],
+			"barcode": result[6],
 			"id": result[5],
 			"image": result[2],
 			"maxAmount": result[1],

@@ -3,7 +3,8 @@ import { connect } from "react-redux"
 import { convertToReasonableMeasurement } from "../helpers/convertUnits"
 import { State } from "../reducer"
 import { CONSTANTS } from "./constants"
-import { setDraggable, setSelectedIngredient } from "./ingredientActions"
+import { addIngredient, removeIngredient, setDraggable, setSelectedIngredient } from "./ingredientActions"
+import IngredientAPI from "./ingredientAPI"
 import { IngredientData, IngredientTypeData } from "./ingredientData"
 
 export interface IngredientProps {
@@ -28,6 +29,8 @@ interface IngredientReduxState {
 }
 
 interface IngredientReduxDispatch {
+	addAnother: (ingredient: IngredientTypeData) => void
+	removeIngredient: (ingredient: IngredientData) => void
 	setSelectedIngredient: (ingredient: IngredientData) => void
 	setDraggable: (draggable: {
 		x?: number,
@@ -69,37 +72,7 @@ class Ingredient extends React.Component<OwnProps, IngredientState> {
 		}
 		
 		if(performance.now() - this.lastClickTime < CONSTANTS.DOUBLE_CLICK_TIME) {			
-			/*setDraggable({
-				dataType,
-				x: event.pageX,
-				y: event.pageY,
-			})
 			
-			const mouseMove = event => {
-				setDraggable({
-					x: event.pageX,
-					y: event.pageY,
-				})
-			}
-			const mouseUp = event => {
-				document.removeEventListener("mousemove", mouseMove)
-				document.removeEventListener("mouseup", mouseUp)
-
-				setDraggable({
-					dataType: null,
-				})
-	
-				this.setState({
-					isDragging: false,
-				})
-			}
-	
-			document.addEventListener("mousemove", mouseMove)
-			document.addEventListener("mouseup", mouseUp)
-	
-			this.setState({
-				isDragging: true,
-			})*/
 		}
 		else {
 			setSelectedIngredient(this.props.data)
@@ -109,8 +82,10 @@ class Ingredient extends React.Component<OwnProps, IngredientState> {
 	
 	render(): JSX.Element {
 		const {
+			addAnother,
 			canDelete,
 			onDelete,
+			removeIngredient,
 			selectedIngredient,
 		} = this.props
 		
@@ -147,7 +122,7 @@ class Ingredient extends React.Component<OwnProps, IngredientState> {
 				position: "absolute",
 				zIndex: 100,
 				top: this.ingredientContainer.current
-					? (this.ingredientContainer.current?.offsetTop - (350 - this.ingredientContainer.current.clientHeight) / 2)
+					? (this.ingredientContainer.current?.offsetTop - (380 - this.ingredientContainer.current.clientHeight) / 2)
 					: 0,
 				left: this.ingredientContainer.current
 					? (this.ingredientContainer.current?.offsetLeft - (270 - this.ingredientContainer.current.clientWidth) / 2)
@@ -166,10 +141,10 @@ class Ingredient extends React.Component<OwnProps, IngredientState> {
 									<option>teaspoons</option>
 								</select>
 							</div>
-							<button className="button small blue" style={{ width: "100%", }}>Add Another</button>
-							<button className="button small green" style={{ width: "100%", }}>Add to Shopping List</button>
+							<button className="button small blue" onClick={event => addAnother(this.props.data.type)} style={{ width: "100%" }}>Add Another</button>
+							<button className="button small green" style={{ width: "100%" }}>Add to Shopping List</button>
 						</div>
-						<button className="button small red remove" style={{ width: "100%", }}>Remove</button>
+						<button className="button small red remove" onClick={event => removeIngredient(this.props.data)} style={{ width: "100%" }}>Remove</button>
 					</div>
 				</div>
 			</div>
@@ -182,6 +157,17 @@ const mapStateToProps = (state: State) => ({
 })
 
 const mapDispatchToProps = (dispatch): IngredientReduxDispatch => ({
+	async addAnother(ingredient: IngredientTypeData) {
+		console.log(ingredient)
+		const newIngredient = await IngredientAPI.addIngredient(ingredient)
+		console.log(newIngredient)
+		dispatch(addIngredient(newIngredient))
+	},
+	removeIngredient(ingredient: IngredientData) {
+		if(IngredientAPI.deleteIngredient(ingredient)) {
+			dispatch(removeIngredient(ingredient))
+		}
+	},
 	setSelectedIngredient: (ingredient: IngredientData) => {
 		dispatch(setSelectedIngredient(ingredient))
 	},

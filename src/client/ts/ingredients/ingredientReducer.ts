@@ -1,5 +1,6 @@
 import {
 	addIngredient,
+	removeIngredient,
 	setAddIngredientShown,
 	setDraggable,
 	setIngredients,
@@ -59,6 +60,14 @@ const ingredients = (state: IngredientState = createDefaultState(), action): Ing
 			return {
 				...state,
 				ingredients: [...state.ingredients, action.ingredient],
+			}
+		}
+
+		case removeIngredient: {
+			state.ingredients.splice(state.ingredients.indexOf(action.ingredient), 1)
+			return {
+				...state,
+				ingredients: [...state.ingredients],
 			}
 		}
 

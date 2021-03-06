@@ -2,7 +2,10 @@ import * as React from "react"
 import { connect } from "react-redux"
 import Database from "../database/database"
 import { State } from "../reducer"
+import ingredient from "./ingredient"
 import Ingredient from "./ingredient"
+import { removeIngredient } from "./ingredientActions"
+import IngredientAPI from "./ingredientAPI"
 import { IngredientData } from "./ingredientData"
 import IngredientsSettings from "./ingredientSettings"
 
@@ -30,8 +33,6 @@ class IngredientSelection extends React.Component<OwnProps> {
 			children,
 			ingredients,
 		} = this.props
-
-		console.log(ingredients)
 		
 		return <div className="ingredients-container">
 			<h1>Your Stock:</h1>
