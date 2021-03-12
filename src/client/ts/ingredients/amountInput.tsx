@@ -1,13 +1,27 @@
 import * as React from "react"
-import { convertToCups, ValidUnits } from "../helpers/convertUnits"
+import {
+	calculateFraction,
+	convertToCups,
+	convertToReasonableMeasurement,
+	Cups,
+	lowestUnitValues,
+	ReasonableFormat,
+	ReasonableFormatObject,
+	ValidUnits
+} from "../helpers/convertUnits"
 
 interface AmountInputProps {
+	defaultInput?: number
+	defaultUnits?: ValidUnits
 	onChange: (cups: number) => void
 	label?: string
+	max?: Cups
+	useRange?: boolean
 }
 
 interface AmountInputState {
 	input: string
+	range: number
 	units: ValidUnits
 }
 
@@ -17,65 +31,113 @@ export default class AmountInput extends React.Component<AmountInputProps, Amoun
 	constructor(props) {
 		super(props)
 
+		let input = ""
+		let range = 0
+		if(this.props.defaultInput) {
+			const reasonable = (convertToReasonableMeasurement(
+				this.props.defaultInput,
+				ReasonableFormat.OBJECT_FORMAT,
+				this.props.defaultUnits,
+			) as ReasonableFormatObject)
+			
+			input = reasonable.uiValue
+			range = reasonable.value
+			this.cups = convertToCups(reasonable.value, this.props.defaultUnits)
+		}
+
 		this.state = {
-			input: "",
-			units: "cups",
+			input,
+			range,
+			units: "cup",
 		}
 	}
 
 	handleChange(input: string, units: ValidUnits) {
-		// users are allowed to divide integers
-		const match = input.match(/([0-9]+)\s*\/\s*([0-9+]+)/)
-		let value
-		if(match) {
-			const integer1 = parseInt(match[1])
-			const integer2 = parseInt(match[2])
-			value = integer1 / integer2
-		}
-		else if(!input.match(/[^0-9\s\/]/g) && !isNaN(parseInt(input))) {
-			value = parseInt(input)
-		}
-
+		const value = calculateFraction(input)
 		if(input) {
 			this.cups = convertToCups(value, units)
-			if(this.props.onChange) {
-				this.props.onChange(this.cups)
+
+			if(this.props.max && this.cups > this.props.max) {
+				
+			}
+			// only update if we have valid input
+			else {
+				if(this.props.onChange) {
+					this.props.onChange(this.cups)
+				}
 			}
 		}
+		return value
 	}
 	
 	render(): JSX.Element {
-		return <div className="amount-input">
+		return <>
 			{
-				this.props.label ? <label>{this.props.label}</label> : null
+				this.props.useRange
+					? <input
+						type="range"
+						onChange={(event) => {
+							const value = parseFloat(event.currentTarget.value)
+							// snap to reasonable values
+							const reasonable = (convertToReasonableMeasurement(
+								value,
+								ReasonableFormat.OBJECT_FORMAT,
+								this.state.units
+							) as ReasonableFormatObject)
+
+							this.handleChange(reasonable.uiValue, this.state.units)
+
+							this.setState({
+								input: reasonable.uiValue,
+								range: reasonable.value,
+							})
+						}}
+						min={lowestUnitValues[this.state.units]}
+						max={this.props.max + 0.001}
+						step={0.0001}
+						value={this.state.range}
+					/>
+					: null
 			}
-			<input
-				onChange={
-					(event) => {
-						this.setState({
-							input: event.currentTarget.value,
-						})
-						this.handleChange(event.currentTarget.value, this.state.units)
-					}
+			<div className="amount-input">
+				{
+					this.props.label ? <label>{this.props.label}</label> : null
 				}
-				placeholder="Amount"
-				value={this.state.input}
-			/>
-			<select
-				onChange={
-					(event) => {
-						this.setState({
-							units: event.currentTarget.value as ValidUnits,
-						})
-						this.handleChange(this.state.input, event.currentTarget.value as ValidUnits)
+				<input
+					onChange={
+						(event) => {
+							this.setState({
+								input: event.currentTarget.value,
+								range: this.handleChange(event.currentTarget.value, this.state.units),
+							})
+						}
 					}
-				}
-				value={this.state.units}
-			>
-				<option value="cups">Cups</option>
-				<option value="tablespoons">Tablespoons</option>
-				<option value="teaspoons">Teaspoons</option>
-			</select>
-		</div>
+					placeholder="Amount"
+					value={this.state.input}
+				/>
+				<select
+					onChange={
+						(event) => {
+							const reasonable = (convertToReasonableMeasurement(
+								this.cups,
+								ReasonableFormat.OBJECT_FORMAT,
+								event.currentTarget.value as ValidUnits
+							) as ReasonableFormatObject)
+
+							this.setState({
+								input: reasonable.uiValue,
+								range: reasonable.value,
+								units: event.currentTarget.value as ValidUnits,
+							})
+						}
+					}
+					value={this.state.units}
+				>
+					<option value="cup">Cups</option>
+					<option value="tablespoon">Tablespoons</option>
+					<option value="teaspoon">Teaspoons</option>
+				</select>
+			</div>
+		</>
 	}
 }

@@ -1,11 +1,28 @@
 import * as React from "react"
 import { connect } from "react-redux"
-import { convertToReasonableMeasurement } from "../helpers/convertUnits"
+import {
+	convertToReasonableMeasurement,
+	lowestUnitValues,
+	ReasonableFormat,
+	ReasonableFormatObject,
+	ValidUnits
+} from "../helpers/convertUnits"
+import { debounce } from "../helpers/debounce"
 import { State } from "../reducer"
+import AmountInput from "./amountInput"
 import { CONSTANTS } from "./constants"
-import { addIngredient, removeIngredient, setDraggable, setSelectedIngredient } from "./ingredientActions"
+import {
+	addIngredient,
+	removeIngredient,
+	setDraggable,
+	setSelectedIngredient,
+	updateIngredient
+} from "./ingredientActions"
 import IngredientAPI from "./ingredientAPI"
-import { IngredientData, IngredientTypeData } from "./ingredientData"
+import {
+	IngredientData,
+	IngredientTypeData
+} from "./ingredientData"
 
 export interface IngredientProps {
 	data: IngredientData
@@ -37,6 +54,7 @@ interface IngredientReduxDispatch {
 		y?: number,
 		dataType?: IngredientTypeData,
 	}) => void
+	updateIngredient: (ingredeint: IngredientData) => void
 }
 
 type OwnProps = IngredientProps & IngredientReduxState & IngredientReduxDispatch
@@ -49,6 +67,7 @@ interface IngredientState {
 class Ingredient extends React.Component<OwnProps, IngredientState> {
 	private lastClickTime: number
 	private ingredientContainer: { current: HTMLDivElement }
+	private updateAmountBind
 	
 	constructor(props: OwnProps) {
 		super(props)
@@ -58,13 +77,14 @@ class Ingredient extends React.Component<OwnProps, IngredientState> {
 		}
 
 		this.ingredientContainer = React.createRef()
+
+		this.updateAmountBind = this.updateAmount.bind(this)
 	}
 	
 	onClick(event) {
 		const {
 			data,
 			setSelectedIngredient,
-			setDraggable,
 		} = this.props
 		
 		if(this.props.canDrag !== undefined && this.props.canDrag === false) {
@@ -75,20 +95,40 @@ class Ingredient extends React.Component<OwnProps, IngredientState> {
 			
 		}
 		else {
-			setSelectedIngredient(this.props.data)
+			setSelectedIngredient(data)
 		}
 		this.lastClickTime = performance.now()
+	}
+
+	/**
+	 * send api call to update ingredient amount
+	 * @param value 
+	 */
+	private async updateAmount(value: number) {
+		this.props.updateIngredient(
+			await IngredientAPI.updateIngredient(this.props.data.id, value)
+		)
 	}
 	
 	render(): JSX.Element {
 		const {
 			addAnother,
 			canDelete,
+			data,
 			onDelete,
 			removeIngredient,
 			selectedIngredient,
 		} = this.props
 		
+		if(!data) {
+			return null
+		}
+
+		const reasonable = convertToReasonableMeasurement(
+			data.amount,
+			ReasonableFormat.OBJECT_FORMAT
+		) as ReasonableFormatObject
+
 		return <div className="ingredient-container">
 			<div
 				className={`ingredient ${this.state.isDragging ? "dragging" : ""}`}
@@ -97,28 +137,29 @@ class Ingredient extends React.Component<OwnProps, IngredientState> {
 				ref={this.ingredientContainer}
 			>
 				{
-					canDelete ? <div
-						className="delete-button"
-						onClick={onDelete}
-					>
-						&#10005;
-					</div>
-					: null
+					canDelete
+						? <div
+							className="delete-button"
+							onClick={onDelete}
+						>
+							&#10005;
+						</div>
+						: null
 				}
 				<div
 					className="icon"
 					style={{
-						backgroundImage: `url(${this.props.data?.type.image ? this.props.data?.type.image : CONSTANTS.NO_IMAGE})`
+						backgroundImage: `url(${data.type.image ? data.type.image : CONSTANTS.NO_IMAGE})`
 					}}
 				/>
 				<div className="info">
-					<b>{this.props.data?.type.name}</b>
-					<div>{convertToReasonableMeasurement(this.props.data?.amount || 0)} remaining</div>
+					<b>{data.type.name}</b>
+					<div>{reasonable.whole} remaining</div>
 				</div>
 			</div>
 
 			<div className="ingredient edit" style={{
-				display: this.props.data && this.props.data === selectedIngredient ? "block" : "none",
+				display: data.id === selectedIngredient?.id ? "block" : "none",
 				position: "absolute",
 				zIndex: 100,
 				top: this.ingredientContainer.current
@@ -129,22 +170,20 @@ class Ingredient extends React.Component<OwnProps, IngredientState> {
 					: 0,
 			}}>
 				<div className="info">
-				<b>{this.props.data?.type.name}</b>
+				<b>{data.type.name}</b>
 					<div className="settings">
 						<div>
-							<input type="range" />
-							<div className="amount-input">
-								<input type="text" />
-								<select>
-									<option>cups</option>
-									<option>tablespoons</option>
-									<option>teaspoons</option>
-								</select>
-							</div>
-							<button className="button small blue" onClick={event => addAnother(this.props.data.type)} style={{ width: "100%" }}>Add Another</button>
+							<AmountInput
+								defaultInput={reasonable.value}
+								defaultUnits={reasonable.units}
+								onChange={amount => debounce(this.updateAmountBind, 0.5, amount)}
+								max={data.type.maxAmount}
+								useRange={true}
+							/>
+							<button className="button small blue" onClick={event => addAnother(data.type)} style={{ width: "100%" }}>Add Another</button>
 							<button className="button small green" style={{ width: "100%" }}>Add to Shopping List</button>
 						</div>
-						<button className="button small red remove" onClick={event => removeIngredient(this.props.data)} style={{ width: "100%" }}>Remove</button>
+						<button className="button small red remove" onClick={event => removeIngredient(data)} style={{ width: "100%" }}>Remove</button>
 					</div>
 				</div>
 			</div>
@@ -158,9 +197,7 @@ const mapStateToProps = (state: State) => ({
 
 const mapDispatchToProps = (dispatch): IngredientReduxDispatch => ({
 	async addAnother(ingredient: IngredientTypeData) {
-		console.log(ingredient)
 		const newIngredient = await IngredientAPI.addIngredient(ingredient)
-		console.log(newIngredient)
 		dispatch(addIngredient(newIngredient))
 	},
 	removeIngredient(ingredient: IngredientData) {
@@ -177,7 +214,10 @@ const mapDispatchToProps = (dispatch): IngredientReduxDispatch => ({
 		data?: IngredientTypeData,
 	}) => {
 		dispatch(setDraggable(draggable))
-	}
+	},
+	updateIngredient: (ingredient: IngredientData) => {
+		dispatch(updateIngredient(ingredient))
+	},
 })
 
 export default connect(

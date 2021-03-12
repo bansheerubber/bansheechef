@@ -1,3 +1,4 @@
+import { Cups } from "../helpers/convertUnits";
 import { resolveUrl } from "../helpers/resolveUrl";
 
 export interface IngredientTypeData {
@@ -5,11 +6,11 @@ export interface IngredientTypeData {
 	id: number
 	image: string
 	name: string
-	maxAmount: number
+	maxAmount: Cups
 }
 
 export interface IngredientData {
-	amount: number
+	amount: Cups
 	id: number
 	type: IngredientTypeData
 }
@@ -29,7 +30,7 @@ export const translateIngredientType = ({
 }): IngredientTypeData => ({
 	barcode,
 	image: resolveUrl(image),
-	maxAmount,
+	maxAmount: parseFloat(maxAmount as any),
 	name,
 	id: typeId,
 })
@@ -51,12 +52,12 @@ export const translateIngredient = ({
 	name: string,
 	typeId: number,
 }): IngredientData => ({
-	amount,
+	amount: parseFloat(amount as any),
 	id,
 	type: {
 		barcode,
 		image: resolveUrl(image),
-		maxAmount,
+		maxAmount: parseFloat(maxAmount as any),
 		name,
 		id: typeId,
 	},

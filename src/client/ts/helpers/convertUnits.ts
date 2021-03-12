@@ -1,30 +1,82 @@
 import { pluralize } from "./pluralize"
 
 export type Cups = number
-export type ValidUnits = "gallons" | "quarts" | "cups" | "tablespoons" | "teaspoons"
+export type ValidUnits = "gallon" | "quart" | "cup" | "tablespoon" | "teaspoon"
 
-export const convertToCups = (value: number, units: ValidUnits) => {
+export const calculateFraction = (input: string): number => {
+	const fractionMatch = input.match(/([0-9]+)\s*\/\s*([0-9+]+)/)
+	let value = 0
+	// match fraction
+	if(fractionMatch) {
+		const integer1 = parseInt(fractionMatch[1]) // only allow integer ratio
+		const integer2 = parseInt(fractionMatch[2])
+		value += integer1 / integer2
+		input = input.replace(fractionMatch[0], "").trim()
+	}
+	
+	// match leading integer at the end and add it to value
+	if(!input.match(/[^0-9\.\s\/]/g) && !isNaN(parseFloat(input))) {
+		value += parseFloat(input)
+	}
+	else if(!isNaN(parseFloat(input)) && input !== "") { // if we got an invalid number, then quit
+		return NaN
+	}
+
+	return value
+}
+
+/**
+ * converts the input unit to cups
+ * @param value 
+ * @param units 
+ */
+export const convertToCups = (value: number, units: ValidUnits): Cups => {
 	switch(units) {
-		case "gallons": {
+		case "gallon": {
 			return value * 16
 		}
 
-		case "quarts": {
+		case "quart": {
 			return value * 4
 		}
 		
-		case "cups": {
+		case "cup": {
 			return value
 		}
 
-		case "tablespoons": {
+		case "tablespoon": {
 			return value / 16
 		}
 
-		case "teaspoons": {
+		case "teaspoon": {
 			return value / 48
 		}
 	}
+}
+
+/**
+ * lowest values used in reasonable measurement converter in cups
+ */
+export const lowestUnitValues: { [index: string]: number } = {
+	"gallon": 8, // in cups
+	"quart": 4, // in cups
+	"cup": 1 / 4, // in cups
+	"tablespoon": 1 / 32, // in cups, 1/2 tablespoon
+	"teaspoon": 1 / 192, // in cups, 1/4 teaspoon
+}
+
+export enum ReasonableFormat {
+	DEFAULT,
+	NO_FORMAT,
+	OBJECT_FORMAT,
+}
+
+export interface ReasonableFormatObject {
+	approximation: boolean
+	uiValue: string
+	units: ValidUnits
+	value: number
+	whole: string
 }
 
 /*
@@ -38,50 +90,69 @@ export const convertToCups = (value: number, units: ValidUnits) => {
 	have a bit less of a material b/c recipes are in exact amounts and we always want to have
 	that amount.
 */
-export const convertToReasonableMeasurement = (value: number) => {
+/**
+ * converts a value to a human-readable format
+ * @param value value to convert
+ * @param noFormat whether or not to add units and approximation symbol
+ */
+export const convertToReasonableMeasurement = (
+	value: Cups,
+	format: ReasonableFormat = ReasonableFormat.DEFAULT,
+	forcedUnits: ValidUnits = null
+): string | ReasonableFormatObject => {
 	const cutoffs = [
 		{
-			lowest: 8, // in cups
+			lowest: lowestUnitValues["gallon"], // in cups
 			leeway: 1 / 8, // 1/8 of a cup
 			multiplier: 1 / 16,
 			name: "gallon",
-			roundables: [[16, ""], [8, "1/2"], [0, ""]]
+			roundables: [[8, "1/2"], [0, "0"]]
 		},
 		{
-			lowest: 4, // in cups
+			lowest: lowestUnitValues["quart"], // in cups
 			leeway: 1 / 8, // 1/8 of a cup
 			multiplier: 1 / 4,
 			name: "quart",
-			roundables: [[4, ""], [2, "1/2"], [0, ""]]
+			roundables: [[2, "1/2"], [0, "0"]]
 		},
 		{
-			lowest: 1 / 4, // in cups
+			lowest: lowestUnitValues["cup"], // in cups
 			leeway: 1 / 96, // 1/2 teaspoon
 			multiplier: 1,
 			name: "cup",
-			roundables: [[1, ""], [3 / 4, "3/4"], [2 / 3, "2/3"], [1 / 2, "1/2"], [1 / 3, "1/3"], [1 / 4, "1/4"], [0, ""]],
+			roundables: [[3 / 4, "3/4"], [2 / 3, "2/3"], [1 / 2, "1/2"], [1 / 3, "1/3"], [1 / 4, "1/4"], [0, "0"]],
 		},
 		{
-			lowest: 1 / 32, // in cups, 1/2 tablespoon
+			lowest: lowestUnitValues["tablespoon"], // in cups, 1/2 tablespoon
 			leeway: 1 / 384, // 1/8 teaspoon
 			multiplier: 16,
 			name: "tablespoon",
-			roundables: [[1 / 16, ""], [1 / 32, "1/2"], [0, ""]],
+			roundables: [[1 / 32, "1/2"], [0, "0"]],
 		},
 		{
-			lowest: 1 / 192, // in cups, 1/4 teaspoon
-			leeway: 0.0005, // lol
+			lowest: lowestUnitValues["teaspoon"], // in cups, 1/4 teaspoon
+			leeway: 0.0004, // lol
 			multiplier: 48,
 			name: "teaspoon",
-			roundables: [[1 / 48, ""], [3 / 192, "3/4"], [1 / 96, "1/2"], [1 / 192, "1/4"], [0, ""]],
+			roundables: [[3 / 192, "3/4"], [1 / 96, "1/2"], [1 / 192, "1/4"], [0, "0"]],
 		},
 	]
 
 	let chosenCutoff
-	for(const cutoff of cutoffs) {
-		if(value > cutoff.lowest - cutoff.leeway) {
-			chosenCutoff = cutoff
-			break
+	if(!forcedUnits) {
+		for(const cutoff of cutoffs) {
+			if(value > cutoff.lowest - cutoff.leeway) {
+				chosenCutoff = cutoff
+				break
+			}
+		}
+	}
+	else {
+		for(const cutoff of cutoffs) {
+			if(cutoff.name === forcedUnits) {
+				chosenCutoff = cutoff
+				break
+			}
 		}
 	}
 
@@ -106,6 +177,30 @@ export const convertToReasonableMeasurement = (value: number) => {
 
 	// TODO add indication of approximation via `~`
 	const integer = Math.floor(value * chosenCutoff.multiplier)
+
+	if(integer && roundedDecimalUI === "0") {
+		roundedDecimalUI = ""
+	}
+
 	const pluralizeTest = !roundedDecimalUI ? integer : integer + roundedDecimal
-	return `${integer ? integer : ""} ${roundedDecimalUI}`.trim() + ` ${pluralize(pluralizeTest, chosenCutoff.name)}`
+	switch(format) {
+		case ReasonableFormat.NO_FORMAT: {
+			return roundedDecimalUI
+		}
+
+		case ReasonableFormat.OBJECT_FORMAT: {
+			return {
+				"approximation": false,
+				"uiValue": `${integer ? integer : ""} ${roundedDecimalUI}`.trim(),
+				"units": chosenCutoff.name,
+				"value": integer / chosenCutoff.multiplier + roundedDecimal,
+				"whole": `${integer ? integer : ""} ${roundedDecimalUI}`.trim() + ` ${pluralize(pluralizeTest, chosenCutoff.name)}`,
+			}
+		}
+
+		default: {
+			return `${integer ? integer : ""} ${roundedDecimalUI}`.trim() + ` ${pluralize(pluralizeTest, chosenCutoff.name)}`
+		}
+
+	}
 }

@@ -34,4 +34,20 @@ export default class IngredientAPI {
 
 		return data.success
 	}
+
+	static async updateIngredient(
+		ingredientId: number,
+		amount: number
+	): Promise<IngredientData> {
+		return translateIngredient(
+			await requestBackend(
+				"/update-ingredient/",
+				"POST",
+				{
+					id: ingredientId,
+					amount,
+				},
+			) as any
+		)
+	}
 }

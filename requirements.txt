@@ -1,0 +1,6 @@
+flask
+opencv-python
+aiortc
+aiohttp
+imutils
+pyzbar

@@ -49,6 +49,47 @@ async def delete_ingredient(request):
 		connection.close()
 		return web.Response(content_type="text/json", body='{"success": false}')
 
+async def update_ingredient(request):
+	values = await request.post()
+
+	ingredient_id = int(values.get("id"))
+	amount = float(values.get("amount"))
+	if amount == None or not (type(amount) == float) or ingredient_id == None or not type(ingredient_id) == int:
+		print("error", ingredient_id, amount, type(ingredient_id), type(amount))
+		return "{}"
+	
+	connection, cursor = create_connection()
+	
+	cursor.execute(
+		"""UPDATE ingredients SET current_amount = ? WHERE id = ?;""",
+		[amount, ingredient_id]
+	)
+
+	result = cursor.execute(
+		"""SELECT name, max_amount, source, current_amount, i.id, ing.id, barcode
+		FROM ingredient_types i
+		LEFT JOIN images im ON i.image_id = im.id
+		JOIN ingredients ing ON i.id = ing.ingredient_type_id
+		WHERE ing.id = ?;""",
+		[ingredient_id]
+	).fetchone()
+
+	connection.commit()
+	connection.close()
+
+	return web.Response(
+		content_type="text/json",
+		body=json.dumps({ # IngredientData object
+			"amount": result[3],
+			"barcode": result[6],
+			"id": result[5],
+			"image": result[2],
+			"maxAmount": result[1],
+			"name": result[0],
+			"typeId": result[4],
+		})
+	)
+
 """
 	'name' and 'max_amount' required
 	'current_amount' defaults to 'max_amount' if omitted
@@ -214,6 +255,7 @@ if __name__ == '__main__':
 	app.router.add_get("/get-ingredients/", get_ingredients)
 	app.router.add_post("/add-ingredient/", add_ingredient)
 	app.router.add_post("/delete-ingredient/", delete_ingredient)
+	app.router.add_post("/update-ingredient/", update_ingredient)
 	app.router.add_post("/barcode-offer/", barcode_offer)
 	app.router.add_post("/get-barcode/", get_barcode)
 

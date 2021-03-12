@@ -24,6 +24,11 @@ export const addIngredient = (ingredient: IngredientData) => ({
   ingredient,
 })
 
+export const updateIngredient = (ingredient: IngredientData) => ({
+  type: updateIngredient,
+  ingredient,
+})
+
 export const removeIngredient = (ingredient: IngredientData) => ({
   type: removeIngredient,
   ingredient,

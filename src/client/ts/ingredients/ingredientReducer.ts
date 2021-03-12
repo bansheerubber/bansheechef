@@ -4,7 +4,8 @@ import {
 	setAddIngredientShown,
 	setDraggable,
 	setIngredients,
-	setSelectedIngredient
+	setSelectedIngredient,
+	updateIngredient
 } from "./ingredientActions"
 import { IngredientData } from "./ingredientData"
 
@@ -60,6 +61,18 @@ const ingredients = (state: IngredientState = createDefaultState(), action): Ing
 			return {
 				...state,
 				ingredients: [...state.ingredients, action.ingredient],
+			}
+		}
+
+		case updateIngredient: {
+			for(let i = 0; i < state.ingredients.length; i++) {
+				if(state.ingredients[i].id === action.ingredient.id) {
+					state.ingredients[i] = action.ingredient
+				}
+			}
+			return {
+				...state,
+				ingredients: [...state.ingredients]
 			}
 		}
 

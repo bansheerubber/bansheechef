@@ -100,7 +100,7 @@ barcodes: 14ms
 def process_frame(image):
 	gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-	start = time.time()
+	# start = time.time()
 
 	sobelx = np.array(
 		(
@@ -124,24 +124,24 @@ def process_frame(image):
 	result2 = cv2.filter2D(gray, -1, sobely)
 	result = cv2.subtract(result1, result2)
 
-	start = mark("sobel", start)
+	# start = mark("sobel", start)
 
 	(_, thresh) = cv2.threshold(result, 225, 255, cv2.THRESH_BINARY)
 
-	start = mark("thresh", start)
+	# start = mark("thresh", start)
 
 	result = cv2.morphologyEx(
 		thresh,
 		cv2.MORPH_CLOSE,
 		cv2.getStructuringElement(cv2.MORPH_RECT, (25, 25))
 	)
-	start = mark("morph", start)
+	# start = mark("morph", start)
 	result = cv2.erode(result, None, iterations=4)
-	start = mark("erode", start)
+	# start = mark("erode", start)
 
 	contours = cv2.findContours(result.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 	contours = imutils.grab_contours(contours)
-	start = mark("contours", start)
+	# start = mark("contours", start)
 
 	if len(contours) > 0:
 		biggest = sorted(contours, key=cv2.contourArea, reverse=True)[0]
@@ -169,10 +169,10 @@ def process_frame(image):
 		darkest = np.min(cropped)
 		alpha = (255 + darkest) / brightest
 		# cropped = cv2.addWeighted(cropped, alpha, cropped, 0, 0)
-		start = mark("cropping", start)
+		# start = mark("cropping", start)
 
 		barcodes = pyzbar.decode(cropped)
-		start = mark("barcodes", start)
+		# start = mark("barcodes", start)
 
 		cv2.drawContours(image, [box], -1, (0, 255, 0), 3)
 		
@@ -193,8 +193,10 @@ class VideoTransformTrack(MediaStreamTrack):
 	
 	async def recv(self):
 		original_frame = await self.track.recv()
-		# original_frame = await self.track.recv()
-		# original_frame = await self.track.recv() # skip a frame for speed
+		original_frame = await self.track.recv()
+		original_frame = await self.track.recv()
+		original_frame = await self.track.recv()
+		original_frame = await self.track.recv() # skip a frame for speed
 
 		# skip frames if we start falling behind
 		if self.track._queue.qsize() > 10:
