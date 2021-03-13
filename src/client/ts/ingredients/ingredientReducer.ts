@@ -77,7 +77,18 @@ const ingredients = (state: IngredientState = createDefaultState(), action): Ing
 		}
 
 		case removeIngredient: {
-			state.ingredients.splice(state.ingredients.indexOf(action.ingredient), 1)
+			let index = -1
+			for(let i = 0; i < state.ingredients.length; i++) {
+				if(state.ingredients[i].id === action.ingredient.id) {
+					index = i
+					break
+				}
+			}
+
+			if(index !== -1) {
+				state.ingredients.splice(index, 1)
+			}
+
 			return {
 				...state,
 				ingredients: [...state.ingredients],

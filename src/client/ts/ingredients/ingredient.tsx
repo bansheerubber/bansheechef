@@ -105,9 +105,11 @@ class Ingredient extends React.Component<OwnProps, IngredientState> {
 	 * @param value 
 	 */
 	private async updateAmount(value: number) {
-		this.props.updateIngredient(
-			await IngredientAPI.updateIngredient(this.props.data.id, value)
-		)
+		if(value) { // protect against null and 0
+			this.props.updateIngredient(
+				await IngredientAPI.updateIngredient(this.props.data.id, value)
+			)
+		}
 	}
 	
 	render(): JSX.Element {
@@ -120,6 +122,7 @@ class Ingredient extends React.Component<OwnProps, IngredientState> {
 			selectedIngredient,
 		} = this.props
 		
+		// don't render on no data
 		if(!data) {
 			return null
 		}

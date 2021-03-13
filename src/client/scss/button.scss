@@ -25,6 +25,11 @@
 	background-color: hsl(195, 62%, 65%);
 }
 
+.button.blue:disabled {
+	background-color: hsl(195, 42%, 55%);
+	color: #777;
+}
+
 .button.green {
 	background-color: hsl(126, 72%, 68%);
 	color: #505050;

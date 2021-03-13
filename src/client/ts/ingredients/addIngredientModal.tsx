@@ -7,7 +7,7 @@ import requestBackend from "../helpers/requestBackend"
 import Modal from "../modal/modal"
 import { State } from "../reducer"
 import AmountInput from "./amountInput"
-import { addIngredient, setAddIngredientShown } from "./ingredientActions"
+import { addIngredient, removeIngredient, setAddIngredientShown } from "./ingredientActions"
 import { IngredientData, IngredientTypeData, translateIngredient, translateIngredientType } from "./ingredientData"
 import Ingredient from "./ingredient"
 import { Camera } from "../camera/camera"
@@ -23,6 +23,7 @@ interface AddIngredientReduxDispatch {
 	close: () => void
 	showCamera: () => void
 	addIngredient: (ingredient: IngredientData) => void
+	removeIngredient: (ingredient: IngredientData) => void
 }
 
 type OwnProps = AddIngredientReduxState & AddIngredientReduxDispatch
@@ -38,6 +39,7 @@ interface AddIngredientModalState {
 
 class AddIngredientModal extends React.Component<OwnProps, AddIngredientModalState> {
 	private lastAddIngredientShown: boolean = false
+	private barcodeScan: HTMLAudioElement = new Audio("/static/scan.wav")
 	
 	constructor(props) {
 		super(props)
@@ -63,6 +65,7 @@ class AddIngredientModal extends React.Component<OwnProps, AddIngredientModalSta
 		).then((data: any) => {
 			if(data.success) {
 				this.state.addedIngredients.splice(this.state.addedIngredients.indexOf(ingredient), 1)
+				this.props.removeIngredient(ingredient)
 				this.setState({
 					addedIngredients: [...this.state.addedIngredients],
 				})
@@ -82,8 +85,8 @@ class AddIngredientModal extends React.Component<OwnProps, AddIngredientModalSta
 			name,
 		} = this.state
 
-		if(barcodeMode) {
-			Camera.dataChannel.send("start") // start up barcode recognition again
+		if(!amount || !name) {
+			return // we should never reach this point, just including for peace of mind
 		}
 		
 		requestBackend(
@@ -102,6 +105,10 @@ class AddIngredientModal extends React.Component<OwnProps, AddIngredientModalSta
 				addedIngredients: [...this.state.addedIngredients],
 			})
 			this.props.addIngredient(ingredient)
+
+			if(barcodeMode) {
+				Camera.dataChannel.send("start") // start up barcode recognition again once we add
+			}
 		})
 	}
 
@@ -119,15 +126,14 @@ class AddIngredientModal extends React.Component<OwnProps, AddIngredientModalSta
 
 					// if we're in barcode mode, query website for ingreident and add it
 					if(this.state.barcodeMode) {
-						console.log("trying to look up", barcode)
 						requestBackend("/get-barcode/", "POST", {
 							barcode,
 						}).then((result: IngredientTypeData) => {
-							console.log(result, "got barcode")
-							
 							if(result.name) {
 								Camera.dataChannel.send("stop") // stop barcode recognition for saving resources
 								
+								this.barcodeScan.play()
+
 								this.setState({
 									amount: result.maxAmount,
 									barcode,
@@ -137,6 +143,9 @@ class AddIngredientModal extends React.Component<OwnProps, AddIngredientModalSta
 							}
 						})
 					}
+					else if(barcode != this.state.barcode) {
+						this.barcodeScan.play()
+					}
 				}
 			})
 		})
@@ -144,6 +153,16 @@ class AddIngredientModal extends React.Component<OwnProps, AddIngredientModalSta
 
 	onHideModal() {
 		Camera.stopRTC()
+
+		// reset modal on close
+		this.setState({
+			addedIngredients: [],
+			amount: 0,
+			barcode: "",
+			barcodeMode: false,
+			name: "",
+			picture: "",
+		})
 	}
 
 	componentDidUpdate() {
@@ -268,6 +287,7 @@ class AddIngredientModal extends React.Component<OwnProps, AddIngredientModalSta
 				<button
 					className="button blue"
 					onClick={() => this.uploadIngredient()}
+					disabled={!this.state.amount || !this.state.name}
 				>
 					Add Ingredient
 				</button>
@@ -348,7 +368,8 @@ const mapStateToProps = (state: State) => ({
 const mapDispatchToProps = (dispatch) => ({
 	close: () => dispatch(setAddIngredientShown(false)),
 	showCamera: () => dispatch(setCameraModalShown(true)),
-	addIngredient: ingredient => dispatch(addIngredient(ingredient))
+	addIngredient: ingredient => dispatch(addIngredient(ingredient)),
+	removeIngredient: ingredient => dispatch(removeIngredient(ingredient))
 })
 
 export default connect(

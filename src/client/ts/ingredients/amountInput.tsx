@@ -67,6 +67,9 @@ export default class AmountInput extends React.Component<AmountInputProps, Amoun
 				}
 			}
 		}
+		else {
+			this.props.onChange(null) // no information to present
+		}
 		return value
 	}
 	
