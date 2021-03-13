@@ -15,8 +15,8 @@ from string import ascii_lowercase
 
 from aiohttp import web
 
+from .barcode.get_barcode import get_barcode, barcode_name_lookup
 from .barcode.barcode import barcode_offer
-from .barcode.get_barcode import get_barcode
 from .constants import LOCAL, LOCAL_STORAGE, LOCAL_IMAGES, TEMPLATES, STATIC
 from .database import create_connection
 from .validation import validate_float, validate_int, validate_string, generate_type_error
@@ -259,6 +259,7 @@ if __name__ == '__main__':
 	app.router.add_post("/update-ingredient/", update_ingredient)
 	app.router.add_post("/barcode-offer/", barcode_offer)
 	app.router.add_post("/get-barcode/", get_barcode)
+	app.router.add_post("/name-lookup/", barcode_name_lookup)
 
 	ssl_context = ssl.SSLContext()
 	ssl_context.load_cert_chain(f"{LOCAL}/server.cert", f"{LOCAL}/server.key")

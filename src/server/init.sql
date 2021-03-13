@@ -21,3 +21,14 @@ CREATE TABLE ingredients (
 	current_amount FLOAT, /* in cups */
 	FOREIGN KEY (ingredient_type_id) REFERENCES ingredient_types (id)
 );
+
+CREATE TABLE barcode_lookup (
+	id INTEGER PRIMARY KEY,
+	name VARCHAR(100) NOT NULL,
+	barcode VARCHAR(50) NOT NULL,
+	source INTEGER NOT NULL, /* the database we pulled from */
+	UNIQUE(barcode)
+);
+
+/* speed up barcode operations */
+CREATE UNIQUE INDEX barcode_lookup_index ON barcode_lookup (barcode);

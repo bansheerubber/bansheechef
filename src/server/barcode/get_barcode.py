@@ -36,3 +36,56 @@ async def get_barcode(request):
 		content_type="text/json",
 		body="{}"
 	)
+
+def get_name_from_barcode(barcode, connection, cursor):
+	# first try out our own personal database just in case there's a user-assigned name
+	result = cursor.execute(
+		"""SELECT name
+			FROM ingredient_types i
+			WHERE barcode = ?;""",
+		[barcode]
+	).fetchone()
+
+	if result:
+		return result[0]
+
+	# if we didn't get a hit in our personal database, then try out barcode_lookup
+	result = cursor.execute(
+		"""SELECT name
+		FROM barcode_lookup
+		WHERE barcode = ?;""",
+		[barcode]
+	).fetchone()
+
+	if result:
+		return result[0]
+	else:
+		return None
+
+async def barcode_name_lookup(request):
+	values = await request.post()
+
+	barcode = validate_string(values.get("barcode"))
+	if not barcode:
+		return web.Response(
+			content_type="text/json",
+			body=generate_type_error()
+		)
+	
+	connection, cursor = create_connection()
+	name = get_name_from_barcode(barcode, connection, cursor)
+	
+	if name:
+		connection.close()
+		return web.Response(
+			content_type="text/json",
+			body=json.dumps({
+				"name": name,
+			})
+		)
+	else:
+		connection.close()
+		return web.Response(
+			content_type="text/json",
+			body="{}"
+		)

@@ -13,6 +13,8 @@ from aiohttp import web
 from aiortc import MediaStreamTrack, RTCPeerConnection, RTCSessionDescription
 
 from ..validation import validate_string, generate_type_error
+from ..database import create_connection
+from .get_barcode import get_name_from_barcode
 
 def visualize_barcode(im, barcodes, already_detected):
 	found = []
@@ -192,6 +194,10 @@ class VideoTransformTrack(MediaStreamTrack):
 		super().__init__()
 		self.track = track
 		self.session = session
+
+		connection, cursor = create_connection()
+		self.connection = connection
+		self.cursor = cursor
 	
 	async def recv(self):
 		original_frame = await self.track.recv()
@@ -214,8 +220,8 @@ class VideoTransformTrack(MediaStreamTrack):
 			if self.session.data_channel and len(barcodes) > 0:
 				self.session.data_channel.send(json.dumps({
 					"found": barcodes,
+					"name": get_name_from_barcode(barcodes[0], self.connection, self.cursor),
 				}))
-				print(barcodes)
 			
 			new_frame = VideoFrame.from_ndarray(image, format="bgr24")
 			new_frame.pts = original_frame.pts

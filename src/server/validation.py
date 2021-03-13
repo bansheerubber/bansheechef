@@ -1,3 +1,5 @@
+import json
+
 # wrangle a string into a float if its a valid float, otherwise none
 def validate_float(input):
 	if input == None: # pass through none

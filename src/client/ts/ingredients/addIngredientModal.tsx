@@ -119,10 +119,7 @@ class AddIngredientModal extends React.Component<OwnProps, AddIngredientModalSta
 				Camera.dataChannel.onmessage = (event) => {
 					const message = JSON.parse(event.data)
 					const barcode = message.found[0]
-
-					this.setState({
-						barcode,
-					})
+					const name = message.name
 
 					// if we're in barcode mode, query website for ingreident and add it
 					if(this.state.barcodeMode) {
@@ -145,6 +142,18 @@ class AddIngredientModal extends React.Component<OwnProps, AddIngredientModalSta
 					}
 					else if(barcode != this.state.barcode) {
 						this.barcodeScan.play()
+					}
+					
+					if(!name) {
+						this.setState({
+							barcode,
+						})
+					}
+					else {
+						this.setState({
+							barcode,
+							name,
+						})
 					}
 				}
 			})
