@@ -12,6 +12,8 @@ from av import VideoFrame
 from aiohttp import web
 from aiortc import MediaStreamTrack, RTCPeerConnection, RTCSessionDescription
 
+from ..validation import validate_string, generate_type_error
+
 def visualize_barcode(im, barcodes, already_detected):
 	found = []
 	for barcode in barcodes:
@@ -232,8 +234,11 @@ class RTCSession:
 async def barcode_offer(request):
 	values = await request.post()
 	
-	rtc_sdp = values["sdp"]
-	rtc_type = values["type"]
+	rtc_sdp = validate_string(values["sdp"])
+	rtc_type = validate_string(values["type"])
+
+	if not rtc_sdp or not rtc_type:
+		return web.Response(content_type="text/json", body=generate_type_error())
 
 	offer = RTCSessionDescription(sdp=rtc_sdp, type=rtc_type)
 
@@ -271,8 +276,8 @@ async def barcode_offer(request):
 	await rtc_peer.setLocalDescription(answer)
 
 	return web.Response(
-		content_type="application/json",
-		text=json.dumps({
+		content_type="text/json",
+		body=json.dumps({
 			"sdp": rtc_peer.localDescription.sdp,
 			"type": rtc_peer.localDescription.type
 		}),

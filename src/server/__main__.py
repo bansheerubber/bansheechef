@@ -19,6 +19,7 @@ from .barcode.barcode import barcode_offer
 from .barcode.get_barcode import get_barcode
 from .constants import LOCAL, LOCAL_STORAGE, LOCAL_IMAGES, TEMPLATES, STATIC
 from .database import create_connection
+from .validation import validate_float, validate_int, validate_string, generate_type_error
 
 app = Flask(__name__)
 
@@ -32,7 +33,11 @@ async def delete_ingredient(request):
 	connection, cursor = create_connection()
 
 	values = await request.post()
-	id = values.get("id")
+	id = validate_int(values.get("id"))
+	
+	if not id: # type check
+		return web.Response(content_type="text/json", body=generate_type_error())
+	
 	cursor.execute("""DELETE FROM ingredients WHERE id = ?;""", [id])
 
 	if cursor.rowcount > 0:
@@ -52,11 +57,11 @@ async def delete_ingredient(request):
 async def update_ingredient(request):
 	values = await request.post()
 
-	ingredient_id = int(values.get("id"))
-	amount = float(values.get("amount"))
-	if amount == None or not (type(amount) == float) or ingredient_id == None or not type(ingredient_id) == int:
-		print("error", ingredient_id, amount, type(ingredient_id), type(amount))
-		return "{}"
+	ingredient_id = validate_int(values.get("id"))
+	amount = validate_float(values.get("amount"))
+	
+	if not amount or not ingredient_id: # type check
+		return web.Response(context_type="text/json", body=generate_type_error())
 	
 	connection, cursor = create_connection()
 	
@@ -108,20 +113,16 @@ async def update_ingredient(request):
 async def add_ingredient(request):
 	values = await request.post()
 	
-	name = values.get("name")
-	max_amount = values.get("maxAmount")
-	current_amount = values.get("currentAmount")
-	barcode = values.get("barcode")
+	name = validate_string(values.get("name"))
+	max_amount = validate_float(values.get("maxAmount"))
+	current_amount = validate_float(values.get("currentAmount"))
+	barcode = validate_string(values.get("barcode"))
 
-	if name == None or max_amount == None or not (type(max_amount) == int or float):
-		return "{}" # error out if name/max_amount isn't provided, or if max_amount is not a valid number
-	
-	name = name.strip()
+	if not name or not max_amount: # type check
+		return web.Response(content_type="text/json", body=generate_type_error()) # error out if name/max_amount isn't provided, or if max_amount is not a valid number
 
 	if current_amount == None:
 		current_amount = max_amount
-	elif not (type(current_amount) == int or float):
-		return "{}" # error out if current_amount is not a valid number
 	
 	connection, cursor = create_connection()
 	
@@ -231,7 +232,7 @@ def images(request):
 
 def index(request):
 	content = open(os.path.join(TEMPLATES, "index.html")).read()
-	return web.Response(content_type="text/html", text=content)
+	return web.Response(content_type="text/html", body=content)
 
 if __name__ == '__main__':
 	if not os.path.isdir(LOCAL):

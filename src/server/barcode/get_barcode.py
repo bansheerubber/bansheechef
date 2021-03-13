@@ -1,10 +1,14 @@
 from ..database import create_connection
+from ..validation import validate_string, generate_type_error
 from aiohttp import web
 import json
 
 async def get_barcode(request):
 	values = await request.post()
-	barcode = values.get("barcode", None)
+	barcode = validate_string(values.get("barcode", None))
+
+	if not barcode:
+		return web.Response(content_type="text/json", body=generate_type_error())
 
 	connection, cursor = create_connection()
 
@@ -19,8 +23,8 @@ async def get_barcode(request):
 
 		if result:
 			return web.Response(
-				content_type="application/json",
-				text=json.dumps({
+				content_type="text/json",
+				body=json.dumps({
 					"image": result[2],
 					"maxAmount": result[1],
 					"name": result[0],
@@ -29,6 +33,6 @@ async def get_barcode(request):
 			)
 	
 	return web.Response(
-		content_type="application/json",
-		text="{}"
+		content_type="text/json",
+		body="{}"
 	)
