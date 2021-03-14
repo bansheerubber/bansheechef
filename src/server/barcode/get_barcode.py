@@ -37,28 +37,30 @@ async def get_barcode(request):
 		body="{}"
 	)
 
-def get_name_from_barcode(barcode, connection, cursor):
+def get_data_from_barcode(barcode, connection, cursor):
 	# first try out our own personal database just in case there's a user-assigned name
 	result = cursor.execute(
-		"""SELECT name
+		"""SELECT name, im.source
 			FROM ingredient_types i
+			LEFT JOIN images im ON i.image_id = im.id
 			WHERE barcode = ?;""",
 		[barcode]
 	).fetchone()
 
 	if result:
-		return result[0]
+		return result
 
 	# if we didn't get a hit in our personal database, then try out barcode_lookup
 	result = cursor.execute(
-		"""SELECT name
-		FROM barcode_lookup
+		"""SELECT name, im.source
+		FROM barcode_lookup b
+		LEFT JOIN images im ON b.image_id = im.id
 		WHERE barcode = ?;""",
 		[barcode]
 	).fetchone()
 
 	if result:
-		return result[0]
+		return result
 	else:
 		return None
 
@@ -73,14 +75,15 @@ async def barcode_name_lookup(request):
 		)
 	
 	connection, cursor = create_connection()
-	name = get_name_from_barcode(barcode, connection, cursor)
+	data = get_data_from_barcode(barcode, connection, cursor)
 	
-	if name:
+	if data:
 		connection.close()
 		return web.Response(
 			content_type="text/json",
 			body=json.dumps({
-				"name": name,
+				"name": data[0],
+				"image": data[1],
 			})
 		)
 	else:

@@ -1,4 +1,4 @@
-import { setCameraModalShown, setCameraPicture } from "./cameraActions"
+import { resetCameraPicture, setCameraModalShown, setCameraPicture } from "./cameraActions"
 
 export interface CameraState {
 	modalShown: boolean
@@ -26,6 +26,14 @@ const camera = (state: CameraState = createDefaultState(), action): CameraState 
 				...state,
 				picture: action.picture,
 				pictureBlob: action.pictureBlob,
+			}
+		}
+
+		case resetCameraPicture: {
+			return {
+				...state,
+				picture: null,
+				pictureBlob: null,
 			}
 		}
 		

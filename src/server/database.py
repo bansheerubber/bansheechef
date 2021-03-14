@@ -38,11 +38,21 @@ def read_food_database(connection, cursor):
 		split = line.split("\t")
 		potential_barcode = split[0]
 		name = split[7]
+		image = split[67].split(" ")[0]
+
+		image_id = None
+		if image:
+			cursor.execute(
+				"""INSERT INTO images (source)
+				VALUES(?);""",
+				[image]
+			)
+			image_id = cursor.lastrowid
 
 		cursor.execute(
-			"""INSERT OR IGNORE INTO barcode_lookup (name, barcode, source)
-			VALUES(?, ?, ?);""",
-			[name, potential_barcode, 0]
+			"""INSERT OR IGNORE INTO barcode_lookup (name, barcode, source, image_id)
+			VALUES(?, ?, ?, ?);""",
+			[name, potential_barcode, 0, image_id]
 		)
 		count = count + 1
 	

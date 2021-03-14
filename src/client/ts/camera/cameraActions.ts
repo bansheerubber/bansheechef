@@ -8,3 +8,7 @@ export const setCameraModalShown = (shown: boolean) => ({
   type: setCameraModalShown,
   shown,
 })
+
+export const resetCameraPicture = () => ({
+  type: resetCameraPicture,
+})

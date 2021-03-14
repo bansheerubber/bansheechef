@@ -7,6 +7,7 @@ import json
 import re
 import cv2
 import ssl
+import requests
 
 from aiortc import VideoStreamTrack, MediaStreamTrack, RTCPeerConnection, RTCSessionDescription
 from aiortc.contrib.media import MediaBlackhole, MediaPlayer, MediaRecorder
@@ -145,9 +146,9 @@ async def add_ingredient(request):
 		image_id = result[0][1]
 		image = result[0][2]
 	else:
-		if "picture" in values:
+		if "pictureBlob" in values:
 			# TODO this whole thing really needs to be made secure
-			picture = values["picture"].file
+			picture = values["pictureBlob"].file
 			image_name = f"{get_random_image_name()}.png"
 			image = f"local:{image_name}"
 			filename = f"{LOCAL_IMAGES}/{image_name}"
@@ -155,13 +156,33 @@ async def add_ingredient(request):
 			cursor.execute("""INSERT INTO images (source) VALUES(?);""", [image])
 			image_id = cursor.lastrowid
 
+			# TODO check magic number n stuff
 			file = open(filename, "wb")
 			file.write(picture.read())
 			file.close()
+		elif "picture" in values: # url link that we should download and store locally
+			picture = validate_string(values.get("picture"))
+			# no type error for this, just silently don't upload picture if we didn't get
+			# valid input (maybe client didn't want to upload a picture in the first place)
+			if picture:
+				image_name = f"{get_random_image_name()}.png"
+				image = f"local:{image_name}"
+				filename = f"{LOCAL_IMAGES}/{image_name}"
+
+				request = requests.get(picture)
+				if request.status_code == 200: # TODO add better error checking, size limit, etc
+					cursor.execute("""INSERT INTO images (source) VALUES(?);""", [image])
+					image_id = cursor.lastrowid
+
+					# TODO prevent url attacks and check magic number n stuff
+					file = open(filename, "wb")
+					file.write(request.content)
+					file.close()
 		
 		# insert the ingredient type
 		cursor.execute(
-			"""INSERT INTO ingredient_types (name, max_amount, image_id, unit_count, is_volume, barcode) VALUES(?, ?, ?, 0, TRUE, ?);""",
+			"""INSERT INTO ingredient_types (name, max_amount, image_id, unit_count, is_volume, barcode)
+			VALUES(?, ?, ?, 0, TRUE, ?);""",
 			[name, max_amount, image_id, barcode]
 		)
 		ingredient_type_id = cursor.lastrowid

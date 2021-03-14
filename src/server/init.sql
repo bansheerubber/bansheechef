@@ -27,6 +27,8 @@ CREATE TABLE barcode_lookup (
 	name VARCHAR(100) NOT NULL,
 	barcode VARCHAR(50) NOT NULL,
 	source INTEGER NOT NULL, /* the database we pulled from */
+	image_id INTEGER unsigned,
+	FOREIGN KEY (image_id) REFERENCES images (id),
 	UNIQUE(barcode)
 );
 

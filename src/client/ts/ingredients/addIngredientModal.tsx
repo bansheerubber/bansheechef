@@ -1,7 +1,7 @@
 import * as React from "react"
 import { connect } from "react-redux"
 import CameraView from "../camera/cameraView"
-import { setCameraModalShown } from "../camera/cameraActions"
+import { resetCameraPicture, setCameraModalShown } from "../camera/cameraActions"
 import { Cups } from "../helpers/convertUnits"
 import requestBackend from "../helpers/requestBackend"
 import Modal from "../modal/modal"
@@ -24,6 +24,7 @@ interface AddIngredientReduxDispatch {
 	showCamera: () => void
 	addIngredient: (ingredient: IngredientData) => void
 	removeIngredient: (ingredient: IngredientData) => void
+	resetCameraPicture: () => void
 }
 
 type OwnProps = AddIngredientReduxState & AddIngredientReduxDispatch
@@ -83,11 +84,14 @@ class AddIngredientModal extends React.Component<OwnProps, AddIngredientModalSta
 			barcode,
 			barcodeMode,
 			name,
+			picture,
 		} = this.state
 
 		if(!amount || !name) {
 			return // we should never reach this point, just including for peace of mind
 		}
+
+		const sentPictureBlob = !pictureBlob ? undefined : pictureBlob
 		
 		requestBackend(
 			"/add-ingredient/",
@@ -96,7 +100,8 @@ class AddIngredientModal extends React.Component<OwnProps, AddIngredientModalSta
 				barcode,
 				name,
 				maxAmount: amount,
-				picture: pictureBlob,
+				pictureBlob: sentPictureBlob,
+				picture,
 			},
 		).then((data: any) => {
 			const ingredient = translateIngredient(data)
@@ -120,6 +125,7 @@ class AddIngredientModal extends React.Component<OwnProps, AddIngredientModalSta
 					const message = JSON.parse(event.data)
 					const barcode = message.found[0]
 					const name = message.name
+					const picture = message.image
 
 					// if we're in barcode mode, query website for ingreident and add it
 					if(this.state.barcodeMode) {
@@ -140,20 +146,27 @@ class AddIngredientModal extends React.Component<OwnProps, AddIngredientModalSta
 							}
 						})
 					}
-					else if(barcode != this.state.barcode) {
-						this.barcodeScan.play()
-					}
-					
-					if(!name) {
-						this.setState({
-							barcode,
-						})
-					}
 					else {
-						this.setState({
-							barcode,
-							name,
-						})
+						if(barcode != this.state.barcode) {
+							this.barcodeScan.play()
+						}
+
+						if(!name) {
+							this.setState({
+								barcode,
+							})
+						}
+						else {
+							if(picture) {
+								this.props.resetCameraPicture() // reset the camera's picture if we have a picture
+							}
+							
+							this.setState({
+								barcode,
+								name,
+								picture: resolveUrl(picture),
+							})
+						}
 					}
 				}
 			})
@@ -199,10 +212,13 @@ class AddIngredientModal extends React.Component<OwnProps, AddIngredientModalSta
 			showCamera,
 		} = this.props
 
+		// favor client-taken pictures over pictures we found by barcode lookup
+		const pickedPicture = picture ? picture : this.state.picture
+
 		const ingredient = (<>
 			<div>
 				<div style={{
-					backgroundImage: !picture ? "url(/static/no-image.png)" : `url(${picture})`,
+					backgroundImage: !pickedPicture ? "url(/static/no-image.png)" : `url(${pickedPicture})`,
 					borderTopRightRadius: 4,
 					borderTopLeftRadius: 4,
 				}} />
@@ -378,7 +394,8 @@ const mapDispatchToProps = (dispatch) => ({
 	close: () => dispatch(setAddIngredientShown(false)),
 	showCamera: () => dispatch(setCameraModalShown(true)),
 	addIngredient: ingredient => dispatch(addIngredient(ingredient)),
-	removeIngredient: ingredient => dispatch(removeIngredient(ingredient))
+	removeIngredient: ingredient => dispatch(removeIngredient(ingredient)),
+	resetCameraPicture: () => dispatch(resetCameraPicture()),
 })
 
 export default connect(
