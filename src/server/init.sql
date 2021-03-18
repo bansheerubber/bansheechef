@@ -34,3 +34,16 @@ CREATE TABLE barcode_lookup (
 
 /* speed up barcode operations */
 CREATE UNIQUE INDEX barcode_lookup_index ON barcode_lookup (barcode);
+
+CREATE TABLE fdc_food (
+	id INTEGER PRIMARY KEY,
+	fdc_id INTEGER NOT NULL, /* food's fdc id */
+	name VARCHAR(50)
+);
+
+CREATE TABLE density (
+	id INTEGER PRIMARY KEY,
+	fdc_id INTEGER NOT NULL,
+	density FLOAT, /* g/cm^3 */
+	FOREIGN KEY (fdc_id) REFERENCES fdc_food (fdc_id)
+);
